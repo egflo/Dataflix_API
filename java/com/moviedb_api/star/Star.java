@@ -1,20 +1,13 @@
 package com.moviedb_api.star;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.moviedb_api.Views;
-import com.moviedb_api.movie.Movie;
-import com.moviedb_api.stars_in_movies.Star_Movie;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
+import com.moviedb_api.cast.Star_Movie;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+
 
 @Entity
 @Table(name = "stars")

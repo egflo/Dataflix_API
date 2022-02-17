@@ -1,10 +1,16 @@
 package com.moviedb_api;
 
+
+import org.springframework.web.bind.annotation.CrossOrigin;
+
+@CrossOrigin(origins = "/**")
 public interface Views {
-     public static interface Summary {
+     public static interface Public {
+
     }
 
-    public static interface Public extends Summary {
+    public static interface Summary extends Public {
+
     }
 
 }
