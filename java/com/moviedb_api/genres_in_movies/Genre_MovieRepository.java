@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository("Genre_MovieRepository")
 public interface Genre_MovieRepository extends JpaRepository<Genre_Movie, Integer> {
 
@@ -16,6 +18,8 @@ public interface Genre_MovieRepository extends JpaRepository<Genre_Movie, Intege
 
     Page<Genre_Movie> findByGenreId(Integer id, Pageable pageable);
 
+    List<Genre_Movie> findByMovieId(String id);
+
     @Query(value = "SELECT g FROM Genre g") //WHERE g.name = :name
-    Iterable<Genre> getAllGenres();
+    Page<Genre> getAllGenres(Pageable pageable);
 }

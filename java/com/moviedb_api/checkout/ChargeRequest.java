@@ -4,36 +4,36 @@ import org.springframework.beans.factory.annotation.*;
 
 public class ChargeRequest {
 
-    public int getAmount() {
+    public Double getAmount() {
         return this.amount;
     }
 
     public Currency getCurrency() {
         return this.currency;
     }
-    public String getDescription() {
 
+    public String getDescription() {
         return this.description;
     }
 
-    public String getStripeToken() {
-        return this.stripeToken;
+    public String getToken() {
+        return this.token;
     }
 
     public void setAmount(Double amount) {
-         this.amount = (int) (amount * 100);
+         this.amount = amount;
     }
 
     public void setCurrency(Currency currency) {
          this.currency = currency;
     }
-    public void setDescription(String description) {
 
+    public void setDescription(String description) {
          this.description = description;
     }
 
-    public void setStripeToken(String token) {
-         this.stripeToken = token;
+    public void setToken(String token) {
+         this.token = token;
     }
 
     public enum Currency {
@@ -41,8 +41,8 @@ public class ChargeRequest {
     }
 
     private String description;
-    private int amount;
+    private Double amount;
     private Currency currency;
     private String stripeEmail;
-    private String stripeToken;
+    private String token;
 }

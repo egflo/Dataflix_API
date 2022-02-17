@@ -1,8 +1,5 @@
 package com.moviedb_api.genre;
 
-import com.fasterxml.jackson.annotation.JsonView;
-import com.moviedb_api.Views;
-import com.moviedb_api.movie.Movie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,9 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
-//Inactive used for Testing Only. Using Genre_Movie for searches
-
-/**
 @Controller // This means that this class is a Controller
 @RequestMapping(path="/genre")
 public class GenreController {
@@ -23,9 +17,20 @@ public class GenreController {
     private GenreRepository genreRepository;
 
     @GetMapping(path="/all")
-    public @ResponseBody Iterable<Genre> getAllGenres() {
+    public @ResponseBody
+    Page<Genre> getAll(
+            @RequestParam Optional<Integer> limit,
+            @RequestParam Optional<Integer> page,
+            @RequestParam Optional<String> sortBy
+    ) {
         // This returns a JSON or XML with the movies
-        return genreRepository.findAll();
+        return genreRepository.findAll(
+                PageRequest.of(
+                        page.orElse(0),
+                        limit.orElse(5),
+                        Sort.Direction.ASC, sortBy.orElse("id")
+                )
+        );
     }
 
     @GetMapping("/{id}")
@@ -54,4 +59,3 @@ public class GenreController {
         );
     }
 }
-**/

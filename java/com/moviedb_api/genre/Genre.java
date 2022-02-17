@@ -3,8 +3,6 @@ package com.moviedb_api.genre;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.moviedb_api.Views;
 import com.moviedb_api.genres_in_movies.Genre_Movie;
-import com.moviedb_api.movie.Movie;
-import com.moviedb_api.stars_in_movies.Star_Movie;
 
 import javax.persistence.*;
 import java.util.List;
@@ -15,9 +13,11 @@ public class Genre {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
+    @JsonView(Views.Public.class)
     private int id;
 
     @Column(name = "name")
+    @JsonView(Views.Public.class)
     private String name;
 
     //@OneToOne(mappedBy = "genre")

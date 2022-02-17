@@ -1,31 +1,31 @@
 package com.moviedb_api.customer;
 
-import com.moviedb_api.order.Order;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.moviedb_api.address.Address;
+import com.moviedb_api.review.Review;
+import com.moviedb_api.roles.Role;
 import com.moviedb_api.sale.Sale;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
 
 @Entity
 @Table(name = "customers")
-public class Customer {
+public class Customer implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
     private int id;
 
-    @Column(name = "firstName")
-    private String firstName;
+    @Column(name = "firstname")
+    private String firstname;
 
-    @Column(name = "lastName")
-    private String lastName;
-
-    @Column(name = "address")
-    private String address;
-
-    @Column(name = "unit")
-    private String unit;
+    @Column(name = "lastname")
+    private String lastname;
 
     @Column(name = "email")
     private String email;
@@ -33,14 +33,11 @@ public class Customer {
     @Column(name = "password")
     private String password;
 
-    @Column(name = "city")
-    private String city;
+    @Column(name = "primaryAddress")
+    private int primaryAddress;
 
-    @Column(name = "state")
-    private String state;
-
-    @Column(name = "postcode")
-    private String postcode;
+    @Column(name = "created")
+    private Date created;
 
     @OneToMany(
             cascade = CascadeType.ALL,
@@ -50,6 +47,31 @@ public class Customer {
     @JoinColumn(name = "customerid")
     private List<Sale> sales = new ArrayList<Sale>();
 
+    @OneToMany(
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+
+    @JoinColumn(name = "customerid")
+    private List<Review> reviews = new ArrayList<Review>();
+
+
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "users_roles",
+            joinColumns = @JoinColumn(name = "userId"),
+            inverseJoinColumns = @JoinColumn(name = "roleId")
+    )
+    private Set<Role> roles = new HashSet<>();
+
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "users_addresses",
+            joinColumns = @JoinColumn(name = "userId"),
+            inverseJoinColumns = @JoinColumn(name = "addressId")
+    )
+    private List<Address> addresses = new ArrayList<>();
+
     public int getId() {
         return id;
     }
@@ -58,29 +80,17 @@ public class Customer {
         this.id = id;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public String getFirstname() {
+        return firstname;
     }
 
-    public void setFirstName(String firstName) {this.firstName = firstName;}
+    public void setFirstname(String firstname) {this.firstname = firstname;}
 
-    public String getLastName() {
-        return lastName;
+    public String getLastname() {
+        return lastname;
     }
 
-    public void setLastName(String lastName) {this.lastName = lastName;}
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {this.address = address;}
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {this.unit = unit;}
+    public void setLastname(String lastname) {this.lastname = lastname;}
 
     public String getEmail() {
         return email;
@@ -88,32 +98,79 @@ public class Customer {
 
     public void setEmail(String email) {this.email = email;}
 
+    public int getPrimaryAddress() {return primaryAddress;}
+
+    public void setPrimaryAddress(int primaryAddress) {
+        this.primaryAddress = primaryAddress;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    public  List<Review> getReviews() {return reviews;}
+
+    public  void setReviews(Review review) {reviews.add(review);}
+
+    public  List<Sale> getSales() {return sales;}
+
+    public  void setSales(Sale sale) {sales.add(sale);}
+
+    public  List<Address> getAddresses() {return addresses;}
+
+    public  void setAddresses(Address address) {addresses.add(address);}
+
+    @JsonIgnore
+    @Override
     public String getPassword() {
         return password;
     }
 
     public void setPassword(String password) {this.password = password;}
 
-    public String getCity() {
-        return city;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+        for (Role role : roles) {
+            authorities.add(new SimpleGrantedAuthority(role.getName()));
+        }
+
+        return authorities;
     }
 
-    public void setCity(String city) {this.city = city;}
-
-    public String getState() {
-        return state;
+    @JsonIgnore
+    @Override
+    public String getUsername() {
+        return email;
     }
 
-    public void setState(String state) {this.state = state;}
-
-    public String getPostcode() {
-        return postcode;
+    @JsonIgnore
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
     }
 
-    public void setPostcode(String postcode) {this.postcode = postcode;}
+    @JsonIgnore
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
-    public  List<Sale> getSales() {return sales;}
+    @JsonIgnore
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
-    public  void setSales(Sale sale) {sales.add(sale);}
+    @JsonIgnore
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 
 }
