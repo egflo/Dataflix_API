@@ -1,18 +1,18 @@
 package com.moviedb_api.movie;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.moviedb_api.Views;
-import com.moviedb_api.genres_in_movies.Genre_Movie;
-import com.moviedb_api.order.Order;
+import com.moviedb_api.genre.Genre;
+import com.moviedb_api.inventory.Inventory;
 import com.moviedb_api.price.Price;
 import com.moviedb_api.ratings.Rating;
-import com.moviedb_api.stars_in_movies.Star_Movie;
+import com.moviedb_api.cast.Star_Movie;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 @Entity
@@ -20,35 +20,35 @@ import java.util.Set;
 public class Movie {
     @Id
     @Column(name = "id")
-    @JsonView(Views.Summary.class)
+    @JsonView(Views.Public.class)
     private String id;
 
     @Column(name="title")
-    @JsonView(Views.Summary.class)
+    @JsonView(Views.Public.class)
     private String title;
 
     @Column(name="year")
-    @JsonView(Views.Summary.class)
+    @JsonView(Views.Public.class)
     private int year;
 
     @Column(name="director")
-    @JsonView(Views.Summary.class)
+    @JsonView(Views.Public.class)
     private String director;
 
     @Column(name="poster")
-    @JsonView(Views.Summary.class)
+    @JsonView(Views.Public.class)
     private String poster;
 
     @Column(name="plot")
-    @JsonView(Views.Summary.class)
+    @JsonView(Views.Public.class)
     private String plot;
 
     @Column(name="rated")
-    @JsonView(Views.Summary.class)
+    @JsonView(Views.Public.class)
     private String rated;
 
     @Column(name="runtime")
-    @JsonView(Views.Summary.class)
+    @JsonView(Views.Public.class)
     private String runtime;
 
     @Column(name="language")
@@ -79,9 +79,19 @@ public class Movie {
     @JsonView(Views.Public.class)
     private String background;
 
-    @OneToMany(targetEntity = Genre_Movie.class, mappedBy = "movieId", orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Column(name="cached")
+    private Integer cached;
+
+    //@OneToMany(targetEntity = Genre_Movie.class, mappedBy = "movieId", orphanRemoval = true, fetch = FetchType.LAZY)
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "genres_in_movies",
+            joinColumns = @JoinColumn(name = "movieId"),
+            inverseJoinColumns = @JoinColumn(name = "genreId")
+    )
     @JsonView(Views.Public.class)
-    private Set<Genre_Movie> genres;
+    private Set<Genre> genres;
 
     //@OneToMany(targetEntity = Rating.class, mappedBy = "movieId", orphanRemoval = true, fetch = FetchType.LAZY)
     //@JsonView(Views.Public.class)
@@ -99,6 +109,14 @@ public class Movie {
     @JoinColumn(name = "id", referencedColumnName = "movieid")
     @JsonView(Views.Public.class)
     private Price price;
+
+    @Column(name="updated")
+    private Date updated;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "id", referencedColumnName = "productId")
+    @JsonView(Views.Public.class)
+    private Inventory inventory;
 
     //Setters and Getters
     public String getId() {
@@ -221,13 +239,9 @@ public class Movie {
         this.background = background;
     }
 
-    public Set<Genre_Movie> getGenres() { return genres; }
+    public Set<Genre> getGenres() { return genres; }
 
-    public void setGenres(Genre_Movie genre_movie) {this.genres.add(genre_movie); }
-
-    //public Set<Rating> getRatings() {return ratings; }
-
-    //public void setRating(Rating rating) {this.ratings.add(rating); }
+    public void setGenres(Genre genre) {this.genres.add(genre); }
 
     public Rating getRatings() {return ratings; }
 
@@ -237,7 +251,32 @@ public class Movie {
 
     public void setCast(Star_Movie star_movie) {this.cast.add(star_movie); }
 
-    public float getPrice() {return price.getPrice(); }
+    public Double getPrice() {return price.getPrice(); }
 
     public void setPrice(Price price) { this.price = price; }
+
+    public Integer getCached() {
+        return cached;
+    }
+    public void setCached(Integer cached) {
+        this.cached = cached;
+    }
+
+    public Date getUpdated() {
+        return updated;
+    }
+    public void setUpdated(Date updated) {
+        this.updated = updated;
+    }
+
+    public Map<String, Object> getInventory() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("quantity", inventory.getQuantity());
+        map.put("status", inventory.getStatus());
+        return map;
+    }
+
+    public void setInventory(Inventory inventory) {
+        this.inventory = inventory;
+    }
 }

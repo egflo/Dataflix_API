@@ -1,18 +1,19 @@
 package com.moviedb_api.sale;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.moviedb_api.customer.Customer;
-import com.moviedb_api.order.Order;
 import com.moviedb_api.order.OrderRepository;
+import com.moviedb_api.security.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import java.util.*;
 
-import java.util.Optional;
 
 @Controller // This means that this class is a Controller
 @RequestMapping(path="/sale") // This means URL's start with /movies (after Application path)
@@ -24,114 +25,172 @@ public class SaleController {
     @Autowired
     private OrderRepository orderRepository;
 
-    @GetMapping(path="/all")
-    public @ResponseBody
-    Page<Sale> getAllSales(
+    @Autowired
+    private JwtTokenUtil authenticationService;
+
+    @Autowired
+    private SaleService saleService;
+
+
+    /**
+     * USER METHODS
+     */
+    @GetMapping("/")
+    public
+    ResponseEntity<?> getSalesByUser(
+            @RequestHeader HttpHeaders headers,
             @RequestParam Optional<Integer> limit,
             @RequestParam Optional<Integer> page,
             @RequestParam Optional<String> sortBy
     )     {
-        return saleRepository.findAll(
+
+        String token = headers.get("authorization").get(0).split(" ")[1].trim();
+        String userId = authenticationService.getUserId(token);
+
+        return saleService.getSalesByCustomerId(
+                Integer.parseInt(userId),
                 PageRequest.of(
                         page.orElse(0),
                         limit.orElse(5),
-                        Sort.Direction.ASC, sortBy.orElse("id")
+                        Sort.Direction.DESC, sortBy.orElse("saleDate")
+                )
+        );
+
+    }
+
+    @PostMapping("/")
+    public ResponseEntity<?> addSaleUser(
+            @RequestHeader HttpHeaders headers,
+            @RequestBody SaleRequest request){
+
+        String token = headers.get("authorization").get(0).split(" ")[1].trim();
+        String userId = authenticationService.getUserId(token);
+
+        request.setCustomerId(Integer.parseInt(userId));
+        return saleService.addSale(request);
+    }
+
+
+    @PutMapping("/")
+    public ResponseEntity<?> updateSaleUser(
+            @RequestHeader HttpHeaders headers,
+            @RequestBody SaleRequest request) {
+
+        String token = headers.get("authorization").get(0).split(" ")[1].trim();
+        String userId = authenticationService.getUserId(token);
+        request.setCustomerId(Integer.parseInt(userId));
+
+        return saleService.updateSale(request);
+    }
+
+
+    /**
+     * ADMIN METHODS
+     */
+
+    @GetMapping("/search/{search}")
+    public ResponseEntity<?> searchSale(
+            @PathVariable String search,
+            @RequestParam Optional<String> status,
+            @RequestParam Optional<Integer> limit,
+            @RequestParam Optional<Integer> page,
+            @RequestParam Optional<Integer> orderBy,
+            @RequestParam Optional<String> sortBy
+    ) {
+
+        return saleService.search(search, status,
+                PageRequest.of(
+                        page.orElse(0),
+                        limit.orElse(5),
+                        orderBy.orElse(1) == 1 ? Sort.Direction.DESC : Sort.Direction.ASC,
+                        sortBy.orElse("saleDate")
                 )
         );
     }
 
+
+    @GetMapping(path="/metadata/")
+    public @ResponseBody
+    ResponseEntity<?> getMetaData(
+           // @PathVariable(value = "days") Integer days
+           @RequestParam Optional<Integer> days
+    ) {
+        return saleService.getMetadata(days);
+    }
     @GetMapping("/customer/{id}")
     public @ResponseBody
-    Iterable<Sale> findByCustomerId(@PathVariable(value = "id") Integer id)
-    {
-        return saleRepository.findSaleByCustomerId(id, Sort.by(Sort.Direction.DESC, "saleDate"));
+    Page<Sale> findByCustomerId(
+            @PathVariable Integer id,
+            @RequestParam Optional<Integer> limit,
+            @RequestParam Optional<Integer> page,
+            @RequestParam Optional<String> sortBy
+    )     {
+        return saleRepository.findSaleByCustomerId(
+                id,
+                PageRequest.of(
+                        page.orElse(0),
+                        limit.orElse(5),
+                        Sort.Direction.DESC, sortBy.orElse("saleDate")
+                )
+        );
     }
 
     @GetMapping("/{id}")
     public @ResponseBody
-    Optional<Sale> findSaleById(@PathVariable(value = "id") Integer id)
+    ResponseEntity<?> findSaleById(@PathVariable(value = "id") Integer id)
     {
-        return saleRepository.findById(id);
+        return saleService.searchSale(id);
+    }
+
+    @PostMapping("/{id}")
+    public @ResponseBody
+    ResponseEntity<?> updateSale(@RequestBody SaleRequest request)
+    {
+        Optional<Sale> update = saleRepository.findById(request.getId());
+        if(update.isPresent()) {
+            Sale sale = update.get();
+            sale.setStripeId(request.getStripeId());
+            Sale save = saleRepository.save(sale);
+            return new ResponseEntity<>(
+                    save,
+                    HttpStatus.OK); //Resource Created
+        }
+        return new ResponseEntity<>(
+                "Sale Not Found",
+                HttpStatus.NOT_FOUND);
     }
 
 
-    @PutMapping("/add")
-    @ResponseBody
-    public Sale addSale(
-            @RequestBody String sale){
 
-        //Sale sale = new Sale();
-        //sale.setSaleDate(newSale.getSaleDate());
-        //sale.setCustomerId(newSale.getCustomerId());
-       // sale.setOrders();
-        Gson gson = new Gson();
-        JsonObject object = gson.fromJson(sale, JsonObject.class);
+    @GetMapping(path="/all")
+    public @ResponseBody
+    Page<Sale> getAllSales(
+            @RequestParam Optional<String> status,
+            @RequestParam Optional<Integer> limit,
+            @RequestParam Optional<Integer> page,
+            @RequestParam Optional<Integer> orderBy,
+            @RequestParam Optional<String> sortBy
 
-        Sale newSale = new Sale();
-
-        Integer customer_id = object.get("customerId").getAsInt();
-        String sale_date = object.get("saleDate").getAsString();
-
-        newSale.setCustomerId(customer_id);
-        newSale.setSaleDate(sale_date);
-
-        newSale = saleRepository.save(newSale);
-        int id = newSale.getId();
-
-        System.out.println("id: " + newSale.getId());
-        System.out.println("Customer ID: " + newSale.getCustomerId());
-        System.out.println("Sale Date: " + newSale.getSaleDate());
-
-        //System.out.println(id);
-        JsonObject[] orders = gson.fromJson(object.get("orders"), JsonObject[].class);
-
-        for(JsonObject obj: orders) {
-            Order newOrder = new Order();
-
-            newOrder.setOrderId(id);
-            newOrder.setMovieId(obj.get("movieId").getAsString());
-            newOrder.setQuantity(obj.get("quantity").getAsInt());
-            newOrder.setList_price(obj.get("list_price").getAsFloat());
-
-            System.out.println("Order ID: " + newOrder.getOrderId());
-            System.out.println("Movie ID: " + newOrder.getMovieId());
-            System.out.println("Qty: " + newOrder.getQuantity());
-
-           // newOrder = orderRepository.save(newOrder);
-
-            //newSale.setOrders(orderRepository.save(newOrder));
-
-            newSale.setOrders(newOrder);
+    )     {
+        if (status.isPresent()) {
+            return saleRepository.findAllByStatus(
+                    status.get(),
+                    PageRequest.of(
+                            page.orElse(0),
+                            limit.orElse(5),
+                            orderBy.orElse(1) == 1 ? Sort.Direction.DESC : Sort.Direction.ASC,
+                            sortBy.orElse("saleDate")
+                    )
+            );
         }
 
-        orderRepository.saveAll(newSale.getOrders());
-        //System.out.println(gson.toJson(newSale.getOrders()));
-
-        //saleRepository.saveAndFlush(newSale);
-
-        //System.out.println(newSale.getOrders().size());
-        //newSale.setOrders();
-
-        //System.out.println(newSale.getOrders().toString() );
-        //return saleRepository.save(newSale);
-        return newSale;
-    }
-
-    @PutMapping("/{id}")
-    @ResponseBody
-    public Sale replaceSale(
-            @RequestBody Sale newSale,
-            @PathVariable int id) {
-
-        return saleRepository.findById(id)
-                .map(sale -> {
-                    sale.setId(newSale.getId());
-                    sale.setSaleDate(newSale.getSaleDate());
-                    sale.setCustomerId(newSale.getCustomerId());
-                    return saleRepository.save(sale);
-                })
-                .orElseGet(() -> {
-                    return saleRepository.save(newSale);
-                });
+        return saleRepository.findAll(
+                PageRequest.of(
+                        page.orElse(0),
+                        limit.orElse(5),
+                        orderBy.orElse(1) == 1 ? Sort.Direction.DESC : Sort.Direction.ASC,
+                        sortBy.orElse("saleDate")
+                )
+        );
     }
 }

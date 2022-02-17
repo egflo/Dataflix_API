@@ -1,0 +1,161 @@
+package com.moviedb_api.security;
+
+import com.moviedb_api.API;
+import com.moviedb_api.cart.Cart;
+import com.moviedb_api.customer.Customer;
+import com.moviedb_api.customer.CustomerRepository;
+import com.moviedb_api.roles.RoleService;
+import com.moviedb_api.roles.Roles;
+import org.json.HTTP;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+@CrossOrigin
+@RequestMapping("/user")
+public class AuthController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+
+    @Autowired
+    private MyUserDetailsService userDetailsService;
+
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
+    private RoleService roleService;
+
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken(@RequestHeader HttpHeaders headers) {
+
+        String token = headers.get("authorization").get(0).split(" ")[1].trim();
+        Map<String, Object> response = new HashMap<>();
+
+        if(jwtTokenUtil.validate(token)) {
+            response.put("message","Access to content is authorized.");
+            response.put("status",200);
+            return new ResponseEntity<>(
+                    HttpStatus.OK);
+        }
+        else {
+            response.put("message","Access to content is unauthorized.");
+            response.put("status",401);
+            return new ResponseEntity<>(
+                    HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @RequestMapping(value = "/reg", method = RequestMethod.POST)
+    public ResponseEntity<?> registerUser(@RequestBody String authenticationRequest) throws Exception {
+        HashMap<String, Object> response = new HashMap<>();
+        JSONObject request = new JSONObject(authenticationRequest);
+        String password = request.getString("password");
+        String email = request.getString("email");
+        String firstName = request.getString("firstname");
+        String lastName = request.getString("lastname");
+
+        Optional<Customer> present = customerRepository.findByEmail(email);
+        if(present.isPresent()) {
+            response.put("message", "User already exists.");
+            return ResponseEntity.badRequest()
+                    .body(response);
+        }
+
+        Customer customer = new Customer();
+        customer.setEmail(email);
+        customer.setFirstname(firstName);
+        customer.setLastname(lastName);
+        customer.setPassword(new BCryptPasswordEncoder().encode(password));
+
+
+        Customer save = customerRepository.save(customer);
+        roleService.insertWithQuery(save.getId(), Roles.USER);
+
+        if(save == null) {
+            response.put("message", "User could not be created.");
+            return ResponseEntity.badRequest()
+                    .body(response);
+        }
+
+        //Authentication authenticate = authenticate(customer.getEmail(), customer.getPassword());
+
+        final Customer userDetails = userDetailsService
+                .loadUserByUsername(customer.getEmail());
+
+        final String token = jwtTokenUtil.generateAccessToken(userDetails);
+
+        response.put("id",customer.getId());
+        response.put("username",customer.getEmail());
+        response.put("token",token);
+        response.put("roles", userDetails.getAuthorities());
+
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .body(response);
+    }
+
+    @RequestMapping(value = "/auth", method = RequestMethod.POST)
+    public ResponseEntity<?> createAuthenticationToken(@RequestBody String authenticationRequest) throws Exception {
+
+        JSONObject request = new JSONObject(authenticationRequest);
+        //BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        //String encodedPassword = passwordEncoder.encode(request.getString("password"));
+
+        Authentication authenticate = authenticate(request.getString("username"), request.getString("password"));
+
+        final Customer userDetails = userDetailsService
+                .loadUserByUsername(request.getString("username"));
+
+        final String token = jwtTokenUtil.generateAccessToken(userDetails);
+
+        Customer customer = (Customer) authenticate.getPrincipal();
+
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("id",customer.getId());
+        response.put("username",customer.getEmail());
+        response.put("token",token);
+        response.put("roles", authenticate.getAuthorities());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.AUTHORIZATION, token)
+                .body(response);
+    }
+
+    private Authentication authenticate(String username, String password) throws Exception {
+        try {
+            //System.out.println(username + " " + password);
+            Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+            return authenticate;
+
+        } catch (DisabledException e) {
+            System.out.println("USER_DISABLED");
+            throw new Exception("USER_DISABLED", e);
+        } catch (BadCredentialsException e) {
+            System.out.println("INVALID_CREDENTIALS");
+            throw new Exception("INVALID_CREDENTIALS", e);
+        } catch (Exception e) {
+            throw new Exception("GENERAL_EXCEPTION",e);
+        }
+    }
+}

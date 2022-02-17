@@ -3,9 +3,6 @@ package com.moviedb_api.ratings;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.moviedb_api.Views;
 import com.moviedb_api.movie.Movie;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-import org.springframework.web.servlet.View;
 
 import javax.persistence.*;
 
@@ -29,6 +26,15 @@ public class Rating {
 
     @Column(name = "rottenTomatoes")
     private String rottenTomatoes;
+
+    @Column(name = "rottenTomatoesAudience")
+    private String rottenTomatoesAudience;
+
+    @Column(name = "rottenTomatoesStatus")
+    private String rottenTomatoesStatus;
+
+    @Column(name = "rottenTomatoesAudienceStatus")
+    private String rottenTomatoesAudienceStatus;
 
     //@ManyToOne(fetch = FetchType.LAZY)
     //@JoinColumn(name = "movieId", insertable = false, updatable = false)
@@ -79,6 +85,24 @@ public class Rating {
 
     public void setRottenTomatoes(String rottenTomatoes) {this.rottenTomatoes = rottenTomatoes;}
 
+    @JsonView(Views.Public.class)
+    public String getRottenTomatoesAudience() {
+        return rottenTomatoesAudience;
+    }
 
+    public void setRottenTomatoesAudience(String rottenTomatoesAudience) {this.rottenTomatoesAudience = rottenTomatoesAudience;}
 
+    @JsonView(Views.Public.class)
+    public String getRottenTomatoesStatus() {
+        return rottenTomatoesStatus;
+    }
+
+    public void setRottenTomatoesStatus(String rottenTomatoesStatus) {this.rottenTomatoesStatus = rottenTomatoesStatus;}
+
+    @JsonView(Views.Public.class)
+    public String getRottenTomatoesAudienceStatus() {
+        return rottenTomatoesAudienceStatus;
+    }
+
+    public void setRottenTomatoesAudienceStatus(String rottenTomatoesAudienceStatus) {this.rottenTomatoesAudienceStatus = rottenTomatoesAudienceStatus;}
 }

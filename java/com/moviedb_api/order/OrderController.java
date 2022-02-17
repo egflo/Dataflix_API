@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,24 +23,31 @@ public class OrderController {
     @Autowired
     private SaleRepository saleRepository;
 
-    @PutMapping("/add")
-    @ResponseBody
-    public Order addOrder(
-            @RequestBody Order newOrder){
+    private OrderService orderService;
 
-        //Sale sale = new Sale();
-        //sale.setSaleDate(newSale.getSaleDate());
-        //sale.setCustomerId(newSale.getCustomerId());
-        // sale.setOrders();
-        System.out.println("ORDER ID: " + newOrder.getOrderId());
-        System.out.println("Movie ID: " + newOrder.getMovieId());
-        System.out.println("Quantity: " + newOrder.getQuantity());
-        System.out.println("List Price: " + newOrder.getList_price());
+    @GetMapping("/{id}")
+    public @ResponseBody
+    ResponseEntity<?> findOrderById(@PathVariable(value = "id") Integer id) {
 
-        return orderRepository.save(newOrder);
+        OrderRequest orderRequest = new OrderRequest();
+        orderRequest.setId(id);
+        return orderService.getOrder(orderRequest);
+    }
+
+    @PostMapping("/")
+    public @ResponseBody
+    ResponseEntity<?> updateByOrder(@RequestBody OrderRequest request) {
+
+        return orderService.updateOrder(request);
     }
 
 
+    @PutMapping("/")
+    public @ResponseBody
+    ResponseEntity<?> addOrder(@RequestBody OrderRequest request) {
+
+        return orderService.addOrder(request);
+    }
 
     @GetMapping(path="/count/{id}")
     public @ResponseBody
@@ -79,10 +87,5 @@ public class OrderController {
         );
     }
 
-    @GetMapping("/{id}")
-    public @ResponseBody
-    Optional<Order> findOrderById(@PathVariable(value = "id") Integer id)
-    {
-        return orderRepository.findByOrderId(id);
-    }
+
 }

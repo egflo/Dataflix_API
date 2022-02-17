@@ -9,7 +9,7 @@ import org.springframework.data.domain.Sort;
 import java.io.IOException;
 
 
-/**
+
 @JsonComponent
 public class PageSerializer extends JsonSerializer<PageImpl<?>> {
 
@@ -44,4 +44,3 @@ public class PageSerializer extends JsonSerializer<PageImpl<?>> {
         jsonGenerator.writeEndObject();
     }
 }
-**/

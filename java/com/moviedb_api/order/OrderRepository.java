@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @Repository("OrderRepository")
 public interface OrderRepository extends CrudRepository<Order, Integer> {
-    Optional<Order> findByOrderId(Integer id);
+    Optional<Order> findById(Integer id);
 
     long countByMovieId(String id);
 
@@ -24,6 +24,8 @@ public interface OrderRepository extends CrudRepository<Order, Integer> {
    // @Query(value = "SELECT COUNT(m.movieId) as count, m.movieId FROM Order m GROUP BY m.movieId ORDER BY count")
     //@Query(value = "SELECT new map(COUNT(m.movieId) AS sales, m.movieId AS movieId) FROM Order m GROUP BY m.movieId ORDER BY sales DESC ")
    //@Query(value = "SELECT COUNT(movieId) as sales, movieId FROM orders GROUP BY movieId ORDER BY sales DESC", nativeQuery = true)
+   // @Query(value = "SELECT new map(COUNT(m.movieId) AS sales, m.movieId AS movieId) FROM Order m GROUP BY m.movieId ORDER BY sales DESC ")
+   //@Query(value = "SELECT COUNT(movieId) as sales FROM orders as o GROUP BY movieId ORDER BY sales DESC", nativeQuery = true)
    @Query(value = "SELECT new map(COUNT(m.movieId) AS sales, m.movieId AS movieId) FROM Order m GROUP BY m.movieId ORDER BY sales DESC ")
    Page<Order> findBestSellers(Pageable pageable);
 }
