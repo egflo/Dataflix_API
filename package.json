@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@stripe/react-stripe-js": "^1.4.1",
+    "@stripe/stripe-js": "^1.17.1",
+    "react-router-dom": "^6.1.1",
+    "validator": "^13.6.0"
+  }
+}
