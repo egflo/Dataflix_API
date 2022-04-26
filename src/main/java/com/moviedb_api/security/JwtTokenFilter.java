@@ -40,10 +40,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        String refreshToken = request.getHeader("RefreshToken");
-        System.out.println("refreshToken: " + refreshToken);
-        // Extract refresh from header
-
 
         // Get jwt token and validate
         final String token = header.split(" ")[1].trim();

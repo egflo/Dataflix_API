@@ -21,8 +21,8 @@ import static java.lang.String.format;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenUtil {
-    @Value("${secret.key}")
-    private final String jwtSecret = "secret";
+    // @Value("${secret.key}")
+    private final String jwtSecret = "zs392945adc543";
     private final String jwtIssuer = "dataflix.io";
 
     ///private final Logger logger;
@@ -67,6 +67,7 @@ public class JwtTokenUtil {
 
     public boolean validate(String token) {
         try {
+            System.out.println("Validating token: " + token);
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
             return true;
         } catch (SignatureException ex) {
