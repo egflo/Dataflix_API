@@ -77,17 +77,15 @@ public class AddressController {
         return addressService.updateAddress(request);
     }
 
-    @DeleteMapping("/")
+    @DeleteMapping("/{id}")
     @ResponseBody
     public ResponseEntity<?> deleteAddress(
             @RequestHeader HttpHeaders headers,
-            @RequestBody AddressRequest request) {
+            @PathVariable(value = "id") Integer id) {
 
         String token = headers.get("authorization").get(0).split(" ")[1].trim();
         String userId = authenticationService.getUserId(token);
-        request.setUserId(Integer.parseInt(userId));
-
-        return addressService.deleteAddress(request.getId());
+        return addressService.deleteAddress(id);
     }
 
     @PostMapping("/primary/{id}")

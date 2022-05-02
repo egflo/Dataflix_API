@@ -55,7 +55,6 @@ public class Star {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "star")
     @JsonView(Views.Summary.class)
-    @JsonManagedReference
     private List<Star_Movie> movies;
 
     public String getStarId() {

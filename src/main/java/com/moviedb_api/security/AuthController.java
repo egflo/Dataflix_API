@@ -9,6 +9,7 @@ import com.moviedb_api.refreshToken.RefreshTokenService;
 import com.moviedb_api.refreshToken.TokenRefreshException;
 import com.moviedb_api.roles.RoleService;
 import com.moviedb_api.roles.Roles;
+import com.moviedb_api.security.TokenRefreshRequest;
 import com.moviedb_api.security.TokenRefreshResponse;
 import org.json.HTTP;
 import org.json.JSONObject;
@@ -163,7 +164,12 @@ public class AuthController {
     }
 
     @RequestMapping(value = "/refresh", method = RequestMethod.POST)
-    public ResponseEntity<?> refreshToken(@RequestBody com.moviedb_api.security.TokenRefreshRequest request) throws Exception {
+    public ResponseEntity<?> refreshToken(@RequestBody TokenRefreshRequest request) throws Exception {
+
+        //String requestToken = headers.get("authorization").get(0).split(" ")[1].trim();
+        //TokenRefreshRequest request = new TokenRefreshRequest();
+        //request.setRefreshToken(requestToken);
+        System.out.println("Generating new token");
 
         Optional<RefreshToken> refreshTokenOptional = refreshTokenService.findByToken(request.getRefreshToken());
 

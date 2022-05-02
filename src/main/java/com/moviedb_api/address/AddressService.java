@@ -84,8 +84,14 @@ public class AddressService {
        }
 
         user_addressRepository.save(user_address);
-        //entityManager.flush();
-        return ResponseEntity.ok(newAddress);
+
+        HttpResponse httpResponse = new HttpResponse();
+        httpResponse.setMessage("Address created successfully");
+        httpResponse.setStatus(HttpStatus.OK.value());
+        httpResponse.setSuccess(true);
+        httpResponse.data = newAddress;
+
+        return ResponseEntity.ok(httpResponse);
     }
 
     public ResponseEntity<?> updateAddress(AddressRequest addressRequest) {
@@ -99,19 +105,25 @@ public class AddressService {
             newAddress.setFirstname(addressRequest.getFirstname());
             newAddress.setLastname(addressRequest.getLastname());
             newAddress.setStreet(addressRequest.getStreet());
-            newAddress.setUnit(addressRequest.getUnit() == null ? addressRequest.getUnit(): "");
+            newAddress.setUnit(addressRequest.getUnit() == null ? addressRequest.getUnit() : "");
             newAddress.setCity(addressRequest.getCity());
             newAddress.setState(addressRequest.getState());
             newAddress.setPostcode(addressRequest.getPostcode());
 
-            return ResponseEntity.ok(addressRepository.save(newAddress));
+            HttpResponse httpResponse = new HttpResponse();
+            httpResponse.setMessage("Address created successfully");
+            httpResponse.setStatus(HttpStatus.OK.value());
+            httpResponse.setSuccess(true);
+            httpResponse.data = newAddress;
+
+            return ResponseEntity.ok(httpResponse);
         }
 
         HttpResponse httpResponse = new HttpResponse();
         httpResponse.setMessage("Address not found");
         httpResponse.setStatus(HttpStatus.NOT_FOUND.value());
         httpResponse.setSuccess(false);
-
+        httpResponse.data = null;
         return ResponseEntity.notFound().build();
     }
 

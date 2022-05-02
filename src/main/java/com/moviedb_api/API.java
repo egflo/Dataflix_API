@@ -36,9 +36,14 @@ class Customer
 };
 
 public class API {
-    public static int background(String movie_id)  {
+    @Value("${moviedb.api.key}")
+    String API_KEY;
 
-        String API_KEY = "";
+    @Value("${background_api.key}")
+    String API_KEY_BACKGROUND;
+
+    public int background(String movie_id)  {
+
 
         int row_ratings, row_movie = 0;
 
@@ -141,21 +146,18 @@ public class API {
 
 
 
-    public static int ProcessMovie(String movie_id, MovieRepository movieRepository, RatingRepository ratingRepository) {
-        String API_KEY = "360e5c3b";
-        String API_KEY_BACKGROUND = "b280014e88d0d68bfa1e566b24931e0e";
-
-
+    public int ProcessMovie(String movie_id, MovieRepository movieRepository, RatingRepository ratingRepository) {
         try {
             System.out.println("Processing Movie ID " + movie_id);
             Optional<Movie> present = movieRepository.findById(movie_id);
             if(present.isPresent()) {
                 Movie movie = present.get();
                 Integer cached = movie.getCached();
-                if(cached == 1) {
+                if(cached == 1 || cached == 0) {
                     //Already cached
                     return 0;
                 }
+
 
                 // Create a neat value object to hold the URL
                 URL url = new URL("http://www.omdbapi.com/?i="+movie_id+"&apikey="+API_KEY);
@@ -544,7 +546,7 @@ public class API {
     }
      **/
 
-    public static void password()  {
+    public void password()  {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             String USER = "root";

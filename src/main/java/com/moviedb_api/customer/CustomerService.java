@@ -74,8 +74,15 @@ public class CustomerService {
             Customer customer = presentCustomer.get();
             customer.setPrimaryAddress(request.getPrimaryAddress());
 
-            Customer save = customerRepository.save(customer);
-            return ResponseEntity.ok(save);
+            HttpResponse response = new HttpResponse();
+            response.setMessage("Customer Primary Address Updated");
+            response.setStatus(200);
+            response.setSuccess(true);
+            response.data = customer;
+
+            return new ResponseEntity<>(
+                    response,
+                    HttpStatus.OK);
         }
 
         HttpResponse response = new HttpResponse();
@@ -97,15 +104,26 @@ public class CustomerService {
             Customer customer = optionalCustomer.get();
             Boolean match = bCryptPasswordEncoder.matches(request.getPassword(), customer.getPassword());
 
-           if(match) {
+            Boolean inUse = customerRepository.existsCustomerByEmail(request.getNewEmail());
+
+           if(match && !inUse) {
                customer.setEmail(request.getNewEmail());
                customer = customerRepository.save(customer);
-               return ResponseEntity.ok(customer);
+
+               HttpResponse response = new HttpResponse();
+               response.setMessage("Email updated");
+               response.setStatus(200);
+               response.setSuccess(true);
+               response.data = customer;
+
+               return new ResponseEntity<>(
+                       response, HttpStatus.OK);
+
            }
 
            else {
                HttpResponse response = new HttpResponse();
-               response.setMessage("Password is incorrect");
+               response.setMessage("Unable to update email");
                response.setStatus(400);
                response.setSuccess(false);
                return ResponseEntity.badRequest().body(response);
@@ -132,7 +150,14 @@ public class CustomerService {
 
             if(match) {
                 customer.setPassword(bCryptPasswordEncoder.encode(request.getNewPassword()));
-                return ResponseEntity.ok(customer);
+
+                HttpResponse response = new HttpResponse();
+                response.setMessage("Password updated");
+                response.setStatus(200);
+                response.setSuccess(true);
+                response.data = customer;
+
+                return ResponseEntity.ok(response);
             }
 
             else {

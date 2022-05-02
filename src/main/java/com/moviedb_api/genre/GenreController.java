@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,19 +19,22 @@ public class GenreController {
 
     @GetMapping(path="/all")
     public @ResponseBody
-    Page<Genre> getAll(
-            @RequestParam Optional<Integer> limit,
-            @RequestParam Optional<Integer> page,
-            @RequestParam Optional<String> sortBy
+    ResponseEntity<?> getAll(
+           // @RequestParam Optional<Integer> limit,
+           // @RequestParam Optional<Integer> page,
+           // @RequestParam Optional<String> sortBy
     ) {
+
+        return ResponseEntity.ok(genreRepository.findAll());
+
         // This returns a JSON or XML with the movies
-        return genreRepository.findAll(
-                PageRequest.of(
-                        page.orElse(0),
-                        limit.orElse(5),
-                        Sort.Direction.ASC, sortBy.orElse("id")
-                )
-        );
+        //return genreRepository.findAll(
+        //        PageRequest.of(
+        //                page.orElse(0),
+         //               limit.orElse(5),
+        //                Sort.Direction.ASC, sortBy.orElse("id")
+        //        )
+        //);
     }
 
     @GetMapping("/{id}")

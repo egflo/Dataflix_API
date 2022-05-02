@@ -96,7 +96,7 @@ public class MovieController {
         );
 
         for (Movie movie: movies.getContent()) {
-            API.ProcessMovie(movie.getId(), movieRepository, ratingRepository);
+            new API().ProcessMovie(movie.getId(), movieRepository, ratingRepository);
 
         }
 
@@ -158,7 +158,7 @@ public class MovieController {
     Optional<Movie> findMovieById(
             @PathVariable(value = "id") String id)
     {
-        API.ProcessMovie(id, movieRepository, ratingRepository);
+        new API().ProcessMovie(id, movieRepository, ratingRepository);
         //API.background(id);
         return movieRepository.findById(id);
     }
@@ -215,25 +215,6 @@ public class MovieController {
         );
     }
 
-    @GetMapping("/star/{id}")
-    //@JsonView(Views.Public.class)
-    public @ResponseBody
-    Page<Movie> findMoviesByStarId(
-            @PathVariable(value = "id") String id,
-            @RequestParam Optional<Integer> limit,
-            @RequestParam Optional<Integer> page,
-            @RequestParam Optional<String> sortBy)
-
-    {
-        return movieRepository.findMovieByStarId(
-                id,
-                PageRequest.of(
-                        page.orElse(0),
-                        limit.orElse(5),
-                        Sort.Direction.ASC, sortBy.orElse("id")
-                )
-        );
-    }
 
     @GetMapping(path="/search/{search}")
     public @ResponseBody

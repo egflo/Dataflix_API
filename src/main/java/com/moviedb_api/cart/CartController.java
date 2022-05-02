@@ -75,6 +75,8 @@ public class CartController {
         return cartService.updateCart(request);
     }
 
+
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteItemFromUsersCart(@RequestHeader HttpHeaders headers,
                                                      @PathVariable Integer id) {

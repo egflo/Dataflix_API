@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.moviedb_api.Views;
 import com.moviedb_api.movie.Movie;
+import com.moviedb_api.movie.MovieSimplified;
 import com.moviedb_api.star.Star;
 
 import javax.persistence.*;
@@ -40,10 +41,10 @@ public class Star_Movie  {
     @JsonBackReference
     private Star star;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "movieId", insertable = false, updatable = false)
-    @JsonBackReference
-    private Movie movie;
+    @ManyToOne
+    @JoinColumn(name = "movieId", referencedColumnName = "id", insertable = false, updatable = false)
+    @JsonView(Views.Summary.class)
+    private MovieSimplified movie;
 
     public Integer getId() {
         return id;
@@ -84,4 +85,8 @@ public class Star_Movie  {
     }
 
     public void setMovieId(String movieId) {this.movieId = movieId;}
+
+    public MovieSimplified getMovie() { return movie; }
+
+    public void setMovie(MovieSimplified movie) {this.movie = movie;}
 }

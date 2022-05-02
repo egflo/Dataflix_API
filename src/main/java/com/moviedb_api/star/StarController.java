@@ -72,7 +72,7 @@ public class StarController {
     }
 
     @GetMapping("/{id}")
-    @JsonView(Views.Summary.class)
+   // @JsonView(Views.Summary.class)
     public @ResponseBody Optional<Star> findStarById(
             @PathVariable(value = "id") String id)
     {

@@ -35,4 +35,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
 
     @Query("SELECT c FROM Customer c WHERE c.id =?1")
     Page<Customer> findByCustomerId(Integer id, PageRequest pageable);
+
+    Boolean existsCustomerByEmail(String newEmail);
 }
