@@ -5,8 +5,10 @@ import com.moviedb_api.HttpResponse;
 import com.moviedb_api.inventory.Inventory;
 import com.moviedb_api.inventory.InventoryRepository;
 import com.moviedb_api.inventory.InventoryService;
+import com.moviedb_api.security.AuthenticationFacade;
 import org.json.HTTP;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,8 @@ import java.util.*;
 @Service
 @Transactional
 public class CartService {
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     private final CartRepository cartRepository;
     private final InventoryService inventoryService;
@@ -81,8 +85,9 @@ public class CartService {
 
     }
 
-    public ResponseEntity<?> getCart(String userId) {
-        Iterable<Cart> items = cartRepository.findAllByUserId(userId);
+    public ResponseEntity<?> getCart(Integer userId) {
+
+        Iterable<Cart> items = cartRepository.findAllByUserId(String.valueOf(userId));
 
         return ResponseEntity.ok(items);
     }
@@ -107,14 +112,17 @@ public class CartService {
 
     public ResponseEntity<?> addCart(CartRequest request){
 
+        //If user is not admin, ensure that the userId is the same as the logged in user
+        if(authenticationFacade.hasRole("USER")) {
+            request.setUserId(String.valueOf(authenticationFacade.getUserId()));
+        }
+
         System.out.println("addCart");
         System.out.println(request.getUserId());
         System.out.println(request.getMovieId());
         System.out.println(request.getQty());
 
        Boolean inventory = inventoryService.checkInventory(request);
-
-       System.out.println(inventory);
 
         if(inventory) {
             Cart cart = new Cart();
@@ -160,6 +168,11 @@ public class CartService {
 
 
     public ResponseEntity<?> updateCart(CartRequest request){
+
+        //If user is not admin, ensure that the userId is the same as the logged in user
+        if(authenticationFacade.hasRole("USER")) {
+            request.setUserId(String.valueOf(authenticationFacade.getUserId()));
+        }
 
         Optional<Cart> update = cartRepository.findCartById(request.getId());
 
@@ -208,13 +221,18 @@ public class CartService {
         return ResponseEntity.notFound().build();
     }
 
-    public ResponseEntity<?> deleteCart(CartRequest cartRequest) {
+    public ResponseEntity<?> deleteCart(CartRequest request) {
 
-        Optional<Cart> cart = cartRepository.findCartById(cartRequest.getId());
+        //If user is not admin, ensure that the userId is the same as the logged in user
+        if(authenticationFacade.hasRole("USER")) {
+            request.setUserId(String.valueOf(authenticationFacade.getUserId()));
+        }
+
+        Optional<Cart> cart = cartRepository.findCartById(request.getId());
 
         if(cart.isPresent()) {
             System.out.println("Cart found");
-            inventoryService.updateInventoryFromCartRemove(cartRequest);
+            inventoryService.updateInventoryFromCartRemove(request);
             cartRepository.delete(cart.get());
 
             HttpResponse response = new HttpResponse();

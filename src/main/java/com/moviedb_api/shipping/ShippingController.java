@@ -36,7 +36,6 @@ public class ShippingController {
         );
     }
 
-
     @GetMapping(path="/customer/{id}")
     public @ResponseBody
     ResponseEntity<?> getShippingByCustomer(

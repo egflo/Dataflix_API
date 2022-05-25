@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.moviedb_api.Views;
 import com.moviedb_api.inventory.Inventory;
 import com.moviedb_api.price.Price;
+import com.moviedb_api.ratings.Rating;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -52,6 +53,10 @@ public class MovieSimplified {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "id", referencedColumnName = "productId")
     private Inventory inventory;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "id", referencedColumnName = "movieid")
+    private Rating ratings;
 
     public MovieSimplified() {
     }
@@ -162,4 +167,16 @@ public class MovieSimplified {
     public void setInventory(Inventory inventory) {
         this.inventory = inventory;
     }
+
+    public Object getRatings() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("imdb", ratings.getImdb() == null ? "" : ratings.getImdb());
+        map.put("rotten", ratings.getRottenTomatoes() == null ? "" : ratings.getRottenTomatoes());
+        map.put("metacritic", ratings.getMetacritic() == null ? "" : ratings.getMetacritic());
+
+        return map;
+    }
+
+    public void setRating(Rating ratings) {this.ratings = ratings; }
+
 }

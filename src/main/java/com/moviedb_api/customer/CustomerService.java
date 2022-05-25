@@ -4,8 +4,10 @@ import com.moviedb_api.HttpResponse;
 import com.moviedb_api.address.Address;
 import com.moviedb_api.address.AddressRepository;
 import com.moviedb_api.sale.Sale;
+import com.moviedb_api.security.AuthenticationFacade;
 import com.moviedb_api.user_address.User_Address;
 import com.moviedb_api.user_address.User_AddressRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +30,11 @@ public class CustomerService {
     @PersistenceContext
     EntityManager entityManager;
 
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
+
     private final CustomerRepository customerRepository;
     private final User_AddressRepository user_addressRepository;
     private final AddressRepository addressRepository;
@@ -43,15 +50,40 @@ public class CustomerService {
     }
 
 
-    public ResponseEntity<?> getCustomer(CustomerRequest request) {
 
-        Integer id = request.getId();
+    public Integer updatePrimaryAddressId(Integer userId){
 
-        if (customerRepository.existsCustomerById(id)) {
-            //Customer customer = customerRepository.findById(id).get();
-            return ResponseEntity.ok(updatePrimaryAddressId(id));
+        Customer customer = customerRepository.findById(userId).get();
+        List<User_Address> addresses = user_addressRepository.findByUserId(userId);
+
+        if(!addresses.isEmpty() && customer.getPrimaryAddress() == 0) {
+            User_Address pickedAddress = addresses.get(0);
+            customer.setPrimaryAddress(pickedAddress.getAddressId());
+            Customer c =  customerRepository.save(customer);
+            return c.getPrimaryAddress();
         }
 
+        else {
+            return 0;
+        }
+    }
+
+    public ResponseEntity<?> getCustomer(CustomerRequest request) {
+
+
+        //If user not admin, check if userId is the same as the one in the request
+        if(authenticationFacade.hasRole("USER")) {
+            request.setId(authenticationFacade.getUserId());
+        }
+
+        else if(authenticationFacade.hasRole("ADMIN") && request.getId() == 0) {
+           // return new ResponseEntity<>(HttpResponse.error("User id is required"), HttpStatus.BAD_REQUEST);
+            request.setId(authenticationFacade.getUserId());
+        }
+
+        if (customerRepository.existsCustomerById(request.getId())) {
+            return ResponseEntity.ok(customerRepository.findById(request.getId()).get());
+        }
 
         HttpResponse response = new HttpResponse();
         response.setMessage("Customer not found");
@@ -65,6 +97,10 @@ public class CustomerService {
     }
 
     public ResponseEntity<?> updatePrimary(CustomerRequest request) {
+
+        if(authenticationFacade.hasRole("USER")) {
+            request.setId(authenticationFacade.getUserId());
+        }
 
         Optional<Customer> presentCustomer = customerRepository.findById(request.getId());
         Optional<User_Address> presentAddress =
@@ -94,10 +130,14 @@ public class CustomerService {
                 response,
                 HttpStatus.NOT_FOUND);
 
-
     }
 
     public ResponseEntity<?> updateEmail(EmailRequest request) {
+
+        if(authenticationFacade.hasRole("USER")) {
+            request.setId(authenticationFacade.getUserId());
+        }
+
         Optional<Customer> optionalCustomer = customerRepository.findById(request.getId());
 
         if(optionalCustomer.isPresent()) {
@@ -142,6 +182,11 @@ public class CustomerService {
     }
 
     public ResponseEntity<?> updatePassword(PasswordRequest request) {
+
+        if(authenticationFacade.hasRole("USER")) {
+            request.setId(authenticationFacade.getUserId());
+        }
+
         Optional<Customer> optionalCustomer = customerRepository.findById(request.getId());
 
         if(optionalCustomer.isPresent()) {
@@ -188,7 +233,6 @@ public class CustomerService {
         customer.setLastname(request.getLastname());
         customer.setEmail(request.getEmail());
 
-
         Optional<Customer> duplicate = customerRepository.findByEmail(request.getEmail());
 
         if(duplicate.isPresent()) {
@@ -196,6 +240,61 @@ public class CustomerService {
         }
 
         return ResponseEntity.ok(customerRepository.save(customer));
+    }
+
+    public ResponseEntity<?> updateCustomer(CustomerRequest request) {
+
+        if(authenticationFacade.hasRole("USER")) {
+            request.setId(authenticationFacade.getUserId());
+        }
+
+        Optional<Customer> optionalCustomer = customerRepository.findById(request.getId());
+
+        if(optionalCustomer.isPresent()) {
+            Customer customer = optionalCustomer.get();
+            customer.setFirstname(request.getFirstname());
+            customer.setLastname(request.getLastname());
+            customer.setEmail(request.getEmail());
+            //customer.setPrimaryAddress(request.getPrimaryAddress() != null ? request.getPrimaryAddress() : customer.getPrimaryAddress());
+            return ResponseEntity.ok(customerRepository.save(customer));
+        }
+
+        HttpResponse response = new HttpResponse();
+        response.setMessage("Customer not found");
+        response.setStatus(404);
+        response.setSuccess(false);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.NOT_FOUND);
+    }
+
+    public ResponseEntity<?> deleteCustomer(CustomerRequest request) {
+
+        if(authenticationFacade.hasRole("USER")) {
+            request.setId(authenticationFacade.getUserId());
+        }
+
+        Optional<Customer> optionalCustomer = customerRepository.findById(request.getId());
+
+        if(optionalCustomer.isPresent()) {
+            HttpResponse response = new HttpResponse();
+            response.setMessage("Customer deleted #" + request.getId());
+            response.setStatus(200);
+            response.setSuccess(true);
+
+            customerRepository.deleteById(request.getId());
+            return ResponseEntity.ok(response);
+        }
+
+        HttpResponse response = new HttpResponse();
+        response.setMessage("Customer not found");
+        response.setStatus(404);
+        response.setSuccess(false);
+
+        return new ResponseEntity<>(
+                response,
+                HttpStatus.NOT_FOUND);
     }
 
     public ResponseEntity<?> generateMetaData() {
@@ -252,52 +351,6 @@ public class CustomerService {
                 customers,
                 HttpStatus.OK);
     }
-
-    public ResponseEntity<?> updateCustomer(CustomerRequest request) {
-        Optional<Customer> optionalCustomer = customerRepository.findById(request.getId());
-
-        if(optionalCustomer.isPresent()) {
-            Customer customer = optionalCustomer.get();
-            customer.setFirstname(request.getFirstname());
-            customer.setLastname(request.getLastname());
-            customer.setEmail(request.getEmail());
-            //customer.setPrimaryAddress(request.getPrimaryAddress() != null ? request.getPrimaryAddress() : customer.getPrimaryAddress());
-            return ResponseEntity.ok(customerRepository.save(customer));
-        }
-
-        HttpResponse response = new HttpResponse();
-        response.setMessage("Customer not found");
-        response.setStatus(404);
-        response.setSuccess(false);
-
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.NOT_FOUND);
-    }
-
-    public ResponseEntity<?> deleteCustomer(CustomerRequest request) {
-        Optional<Customer> optionalCustomer = customerRepository.findById(request.getId());
-
-        if(optionalCustomer.isPresent()) {
-            HttpResponse response = new HttpResponse();
-            response.setMessage("Customer deleted #" + request.getId());
-            response.setStatus(200);
-            response.setSuccess(true);
-
-            customerRepository.deleteById(request.getId());
-            return ResponseEntity.ok(response);
-        }
-
-        HttpResponse response = new HttpResponse();
-        response.setMessage("Customer not found");
-        response.setStatus(404);
-        response.setSuccess(false);
-
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.NOT_FOUND);
-    }
-
     public ResponseEntity<?> search(String search, PageRequest pageable) {
 
         Pattern pattern = Pattern.compile("-?\\d+(\\.\\d+)?");
@@ -320,57 +373,4 @@ public class CustomerService {
         }
     }
 
-    public ResponseEntity<?> updatePrimaryAddress(CustomerRequest request) {
-        Optional<Customer> optionalCustomer = customerRepository.findById(request.getId());
-
-        if(optionalCustomer.isPresent()) {
-            Customer customer = optionalCustomer.get();
-            customer.setPrimaryAddress(request.getPrimaryAddress());
-            return ResponseEntity.ok(customerRepository.save(customer));
-        }
-
-        HttpResponse response = new HttpResponse();
-        response.setMessage("Customer not found");
-        response.setStatus(404);
-        response.setSuccess(false);
-
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.NOT_FOUND);
-    }
-
-
-    public Customer updatePrimaryAddressId(Integer userId){
-
-        Customer customer = customerRepository.findById(userId).get();
-        List<User_Address> addresses = user_addressRepository.findByUserId(userId);
-
-        if(!addresses.isEmpty() && customer.getPrimaryAddress() == 0) {
-            User_Address pickedAddress = addresses.get(0);
-            customer.setPrimaryAddress(pickedAddress.getAddressId());
-
-            return customerRepository.save(customer);
-        }
-
-        else {
-            return customer;
-        }
-    }
-
-    public Integer getPrimaryAddressId(Integer userId){
-        Customer customer = customerRepository.findById(userId).get();
-        List<User_Address> addresses = user_addressRepository.findByUserId(userId);
-
-        if(!addresses.isEmpty()){
-            User_Address pickedAddress = addresses.get(0);
-            customer.setPrimaryAddress(pickedAddress.getAddressId());
-            //customerRepository.save(customer);
-
-            return pickedAddress.getAddressId();
-        }
-
-        else {
-            return 0;
-        }
-    }
 }

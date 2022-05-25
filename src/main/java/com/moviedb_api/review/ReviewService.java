@@ -1,7 +1,9 @@
 package com.moviedb_api.review;
 
 import com.moviedb_api.HttpResponse;
+import com.moviedb_api.security.AuthenticationFacade;
 import org.json.HTTP;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,8 @@ import java.util.Optional;
 @Service
 @Transactional
 public class ReviewService {
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -28,8 +32,10 @@ public class ReviewService {
     }
 
     public ResponseEntity<?> create(ReviewRequest reviewRequest) {
-        System.out.println(reviewRequest.getMovieId());
-        System.out.println(reviewRequest.getCustomerId());
+
+        if(authenticationFacade.hasRole("USER")) {
+            reviewRequest.setCustomerId(authenticationFacade.getUserId());
+        }
 
         Review review = new Review();
         review.setMovieId(reviewRequest.getMovieId());
@@ -46,12 +52,17 @@ public class ReviewService {
         review.setSentiment(sentiment);
 
         Review save = reviewRepository.save(review);
-        entityManager.flush();
-        save = reviewRepository.findById(save.getId()).get();
-        return ResponseEntity.ok(save);
+        System.out.println("Review saved: " + save.getId());
+        //entityManager.flush();
+        //save = reviewRepository.findById(save.getId()).get();
+        return new ResponseEntity<>(save, HttpStatus.CREATED);
     }
 
     public ResponseEntity<?> update(ReviewRequest reviewRequest) {
+
+        if(authenticationFacade.hasRole("USER")) {
+            reviewRequest.setCustomerId(authenticationFacade.getUserId());
+        }
 
         Optional<Review> reviewOptional = reviewRepository.findById(reviewRequest.getId());
         if (reviewOptional.isPresent()) {

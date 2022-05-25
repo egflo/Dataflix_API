@@ -5,6 +5,7 @@ import com.moviedb_api.sale.Sale;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,5 +19,10 @@ public interface TaxRepository extends CrudRepository<TaxRate, Integer> {
     Optional<TaxRate> findById(Integer id);
 
     Iterable<TaxRate> findByCityContaining(String city);
+
+    Iterable<TaxRate> findByCityContainingIgnoreCase(String city);
+
+    @Query("select u from TaxRate u where lower(u.city) like lower(concat('%', :name,'%'))")
+    Iterable<TaxRate> findByCity(String name);
 
 }

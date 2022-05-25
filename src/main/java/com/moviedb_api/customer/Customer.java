@@ -112,13 +112,13 @@ public class Customer implements UserDetails {
         this.created = created;
     }
 
-    public  List<Review> getReviews() {return reviews;}
+    //public  List<Review> getReviews() {return reviews;}
 
-    public  void setReviews(Review review) {reviews.add(review);}
+    ///public  void setReviews(Review review) {reviews.add(review);}
 
-    public  List<Sale> getSales() {return sales;}
+    //public  List<Sale> getSales() {return sales;}
 
-    public  void setSales(Sale sale) {sales.add(sale);}
+    /// public  void setSales(Sale sale) {sales.add(sale);}
 
     public  List<Address> getAddresses() {return addresses;}
 
@@ -173,4 +173,17 @@ public class Customer implements UserDetails {
         return true;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Customer user = (Customer) o;
+        return id == user.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, firstname, lastname, email, password, created);
+    }
 }
+

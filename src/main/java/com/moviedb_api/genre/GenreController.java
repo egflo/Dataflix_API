@@ -20,21 +20,9 @@ public class GenreController {
     @GetMapping(path="/all")
     public @ResponseBody
     ResponseEntity<?> getAll(
-           // @RequestParam Optional<Integer> limit,
-           // @RequestParam Optional<Integer> page,
-           // @RequestParam Optional<String> sortBy
     ) {
 
         return ResponseEntity.ok(genreRepository.findAll());
-
-        // This returns a JSON or XML with the movies
-        //return genreRepository.findAll(
-        //        PageRequest.of(
-        //                page.orElse(0),
-         //               limit.orElse(5),
-        //                Sort.Direction.ASC, sortBy.orElse("id")
-        //        )
-        //);
     }
 
     @GetMapping("/{id}")

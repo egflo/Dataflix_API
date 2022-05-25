@@ -29,45 +29,37 @@ public class BookmarkController {
     @Autowired
     private BookmarkService bookmarkService;
 
+    @Autowired
+    private BookmarkRepository bookmarkRepository;
 
-    /**
-     *
-     *    USER METHODS
-     * **/
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserBookmarkById(@RequestHeader HttpHeaders headers,
+    public ResponseEntity<?> getBookmark(@RequestHeader HttpHeaders headers,
                                              @PathVariable String id) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
 
-        BookmarkRequest request = new BookmarkRequest();
-        request.setMovieId(id);
-        request.setCustomerId(Integer.parseInt(userId));
-
-
-
-        return bookmarkService.bookmarkExists(request);
-        //return bookmarkService.getBookmark(request);
+        return bookmarkService.getBookmark(id);
     }
 
-    @PutMapping("/{id})")
+    @PutMapping("/")
     public ResponseEntity<?> addUserBookmark(@RequestHeader HttpHeaders headers,
-                                             @PathVariable String id) {
+                                             @RequestBody BookmarkRequest request) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
 
-        BookmarkRequest request = new BookmarkRequest();
-        request.setMovieId(id);
-        request.setCustomerId(Integer.parseInt(userId));
+        return bookmarkService.updateBookmark(request);
+    }
 
-        return bookmarkService.addBookmark(request);
+
+    @PostMapping("/")
+    public ResponseEntity<?> updateBookmark(@RequestHeader HttpHeaders headers,
+                                             @RequestBody BookmarkRequest request) {
+
+
+        return bookmarkService.updateBookmark(request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUserBookmark(@RequestHeader HttpHeaders headers,
+    public ResponseEntity<?> deleteBookmark(@RequestHeader HttpHeaders headers,
                                                 @PathVariable String id) {
 
         String token = headers.get("authorization").get(0).split(" ")[1].trim();
@@ -78,39 +70,6 @@ public class BookmarkController {
         request.setCustomerId(Integer.parseInt(userId));
 
         return bookmarkService.deleteBookmark(request);
-    }
-
-    @GetMapping("/")
-    public ResponseEntity<?> getUserBookmark(@RequestHeader HttpHeaders headers,
-                                             @RequestBody BookmarkRequest request) {
-
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setCustomerId(Integer.parseInt(userId));
-
-        return bookmarkService.getBookmark(request);
-    }
-
-    @PutMapping("/")
-    public ResponseEntity<?> addUserBookmark(@RequestHeader HttpHeaders headers,
-                                      @RequestBody BookmarkRequest request) {
-
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setCustomerId(Integer.parseInt(userId));
-
-        return bookmarkService.addBookmark(request);
-    }
-
-    @PostMapping("/")
-    public ResponseEntity<?> updateUserBookmark(@RequestHeader HttpHeaders headers,
-                                             @RequestBody BookmarkRequest request) {
-
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setCustomerId(Integer.parseInt(userId));
-
-        return bookmarkService.processBookmark(request);
     }
 
     @DeleteMapping("/")
@@ -124,7 +83,7 @@ public class BookmarkController {
         return bookmarkService.deleteBookmark(request);
     }
 
-    @GetMapping("/all")
+    @GetMapping("/")
     public ResponseEntity<?> getAllUserBookmarks(
             @RequestHeader HttpHeaders headers,
             @RequestParam Optional<Integer> limit,
@@ -132,10 +91,7 @@ public class BookmarkController {
             @RequestParam Optional<String> sortBy
     ) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
         BookmarkRequest request = new BookmarkRequest();
-        request.setCustomerId(Integer.parseInt(userId));
 
         return bookmarkService.getBookmarksByCustomerId(request, PageRequest.of(
                 page.orElse(0),
@@ -150,17 +106,23 @@ public class BookmarkController {
      *    ADMIN METHODS
      * **/
 
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllBookmarks(
+            @RequestHeader HttpHeaders headers,
+            @RequestParam Optional<Integer> limit,
+            @RequestParam Optional<Integer> page,
+            @RequestParam Optional<String> sortBy
+    ) {
 
-    /*
-    @GetMapping("/{id}")
-    public ResponseEntity<?> findByBookmarkId(
-            @PathVariable Integer id) {
 
-        BookmarkRequest request = new BookmarkRequest();
-        request.setId(id);
-        return bookmarkService.getBookmark(request);
+        return ResponseEntity.ok(bookmarkRepository.findAll(PageRequest.of(
+                page.orElse(0),
+                limit.orElse(5),
+                Sort.Direction.DESC, sortBy.orElse("created")
+        )));
+
     }
-*/
+
     @GetMapping("/customer/{id}")
     public ResponseEntity<?> getBookmarksByCustomerId(
             @PathVariable Integer id,
@@ -194,26 +156,4 @@ public class BookmarkController {
                 Sort.Direction.ASC, sortBy.orElse("id")
         ));
     }
-
-    @PutMapping("/add")
-    @ResponseBody
-    public ResponseEntity<?> addBookmark(@RequestBody BookmarkRequest request) {
-
-        return bookmarkService.addBookmark(request);
-    }
-
-    @PostMapping("/delete")
-    @ResponseBody
-    public ResponseEntity<?> deleteBookmark(@RequestBody BookmarkRequest request) {
-
-        return bookmarkService.deleteBookmark(request);
-    }
-
-    @PostMapping("/update")
-    @ResponseBody
-    public ResponseEntity<?> updateBookmark(@RequestBody BookmarkRequest request) {
-
-        return bookmarkService.updateBookmark(request);
-    }
-
 }

@@ -42,54 +42,67 @@ public class CustomerController {
     @GetMapping("/")
     public ResponseEntity<?> getUser(@RequestHeader HttpHeaders headers)
     {
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
+        //Empty request since we are only interested in the token
         CustomerRequest request = new CustomerRequest();
-        request.setId(Integer.parseInt(userId));
-
         return customerService.getCustomer(request);
     }
 
-    @PostMapping("/primary")
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCustomerById(@PathVariable(value = "id") Integer id)
+    {
+        CustomerRequest customerRequest = new CustomerRequest();
+        customerRequest.setId(id);
+        return customerService.getCustomer(customerRequest);
+    }
+
+    @PutMapping("/")
+    @ResponseBody
+    public ResponseEntity<?> updateCustomer( @RequestHeader HttpHeaders headers,
+                                                 @RequestBody CustomerRequest request) {
+
+        return customerService.updateCustomer(request);
+    }
+
+    @DeleteMapping("/{id}")
+    public @ResponseBody ResponseEntity<?> deleteCustomerById(
+            @PathVariable(value = "id") Integer id)
+    {
+        CustomerRequest customerRequest = new CustomerRequest();
+        customerRequest.setId(id);
+
+        return customerService.deleteCustomer(customerRequest);
+    }
+
+    @PutMapping("/primary")
     @ResponseBody
     public ResponseEntity<?> updateUserPrimary(
             @RequestHeader HttpHeaders headers,
             @RequestBody CustomerRequest request) {
 
-        System.out.println(request.getPrimaryAddress());
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setId(Integer.parseInt(userId));
-
         return customerService.updatePrimary(request);
     }
 
-    @PostMapping("/email")
+    @PutMapping("/email")
     @ResponseBody
     public ResponseEntity<?> updateUserEmail(
             @RequestHeader HttpHeaders headers,
             @RequestBody EmailRequest request) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setId(Integer.parseInt(userId));
-
         return customerService.updateEmail(request);
     }
 
 
-    @PostMapping("/password")
+    @PutMapping("/password")
     @ResponseBody
     public ResponseEntity<?> updateCustomerPassword(
             @RequestHeader HttpHeaders headers,
             @RequestBody PasswordRequest request) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setId(Integer.parseInt(userId));
-
         return customerService.updatePassword(request);
     }
+
+
+
 
     /**
      *
@@ -103,7 +116,6 @@ public class CustomerController {
             @RequestParam Optional<Integer> orderBy,
             @RequestParam Optional<String> sortBy
     ) {
-
 
             // This returns a JSON or XML with the movies
             return customerService.search(search,
@@ -178,32 +190,6 @@ public class CustomerController {
                         Sort.Direction.ASC, sortBy.orElse("id")
                 )
         );
-    }
-
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getCustomerById(@PathVariable(value = "id") Integer id)
-    {
-        CustomerRequest customerRequest = new CustomerRequest();
-        customerRequest.setId(id);
-        return customerService.getCustomer(customerRequest);
-    }
-
-    @PostMapping("/{id}")
-    public @ResponseBody ResponseEntity<?> updateCustomerById(
-            @PathVariable(value = "id") Integer id, @RequestBody CustomerRequest customerRequest)
-    {
-        return customerService.updateCustomer(customerRequest);
-    }
-
-    @DeleteMapping("/{id}")
-    public @ResponseBody ResponseEntity<?> deleteCustomerById(
-            @PathVariable(value = "id") Integer id)
-    {
-        CustomerRequest customerRequest = new CustomerRequest();
-        customerRequest.setId(id);
-
-        return customerService.deleteCustomer(customerRequest);
     }
 
 }

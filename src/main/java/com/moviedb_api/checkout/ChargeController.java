@@ -7,6 +7,7 @@ import com.moviedb_api.cart.Cart;
 import com.moviedb_api.cart.CartRepository;
 import com.moviedb_api.customer.Customer;
 import com.moviedb_api.customer.CustomerRepository;
+import com.moviedb_api.security.AuthenticationFacade;
 import com.moviedb_api.security.JwtTokenUtil;
 import com.moviedb_api.tax.TaxRate;
 import com.moviedb_api.tax.TaxRepository;
@@ -54,15 +55,27 @@ public class ChargeController {
     @Autowired
     private TaxRepository taxRepository;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public ResponseEntity<?> checkoutUser(@RequestHeader HttpHeaders headers) {
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
 
-        Customer customer = customerRepository.findById(Integer.parseInt(userId)).get();
+        Integer userId = authenticationFacade.getUserId();
+
+        Customer customer = customerRepository.findById(userId).get();
         List<Address> addresses = customer.getAddresses();
         Integer primaryAddressId = customer.getPrimaryAddress();
-        Iterable<Cart> cart = cartRepository.findAllByUserIdOrderByCreatedDateDesc(userId);
+
+        //if no primary address, set the first address as primary
+        if(primaryAddressId == null || primaryAddressId == 0) {
+            primaryAddressId = addresses.get(0).getId();
+            customer.setPrimaryAddress(primaryAddressId);
+            customerRepository.save(customer);
+            System.out.println("Primary Address Set");
+        }
+
+        Iterable<Cart> cart = cartRepository.findAllByUserIdOrderByCreatedDateDesc(String.valueOf(userId));
 
         HashMap<String, Object> response = new HashMap<>();
         response.put("addresses", addresses);
@@ -75,8 +88,9 @@ public class ChargeController {
         response.put("subTotal", subTotal);
 
         if(addresses.size() != 0) {
-            Address address = addresses.stream().filter(a -> a.getId() == primaryAddressId).collect(Collectors.toList()).get(0);
-            Iterable<TaxRate> tax = taxRepository.findByCityContaining(address.getCity());
+            Integer finalPrimaryAddressId = primaryAddressId;
+            Address address = addresses.stream().filter(a -> a.getId() == finalPrimaryAddressId).collect(Collectors.toList()).get(0);
+            Iterable<TaxRate> tax = taxRepository.findByCity(address.getCity());
 
 
             Double rate = 0.0775;
@@ -109,13 +123,11 @@ public class ChargeController {
             @RequestBody AddressRequest request
     ) {
         HashMap<String, Object> response = new HashMap<>();
+        Integer userId = authenticationFacade.getUserId();
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-
-        Customer customer = customerRepository.findById(Integer.parseInt(userId)).get();
+        Customer customer = customerRepository.findById(userId).get();
         List<Address> addresses = customer.getAddresses();
-        Iterable<Cart> cart = cartRepository.findAllByUserIdOrderByCreatedDateDesc(userId);
+        Iterable<Cart> cart = cartRepository.findAllByUserIdOrderByCreatedDateDesc(String.valueOf(userId));
 
         Optional<Address> address = addressRepository.findById(request.getId());
 
@@ -124,7 +136,7 @@ public class ChargeController {
             response.put("defaultId", address.get().getId());
             response.put("cart", cart);
 
-            Iterable<TaxRate> tax = taxRepository.findByCityContaining(address.get().getCity());
+            Iterable<TaxRate> tax = taxRepository.findByCity(address.get().getCity());
             Double subTotal = 0.0;
             for(Cart item: cart){
                 subTotal += item.getQuantity() * item.getMovie().getPrice();
@@ -169,7 +181,7 @@ public class ChargeController {
 
             if(address.isPresent()) {
                 response.put("address", address.get());
-                Iterable<TaxRate> tax = taxRepository.findByCityContaining(address.get().getCity());
+                Iterable<TaxRate> tax = taxRepository.findByCity(address.get().getCity());
                 Double subTotal = 0.0;
                 for(Cart item: cart){
                     subTotal += item.getQuantity() * item.getMovie().getPrice();

@@ -1,6 +1,7 @@
 package com.moviedb_api.cart;
 
 
+import com.moviedb_api.security.AuthenticationFacade;
 import com.moviedb_api.security.JwtTokenUtil;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,66 +29,40 @@ public class CartController {
     private CartService cartService;
 
     @Autowired
-    private JwtTokenUtil authenticationService;
+    private AuthenticationFacade authenticationFacade;
+
 
     @GetMapping("/")
-    public ResponseEntity<?> getUserCartItems(@RequestHeader HttpHeaders headers, CartRequest request) {
+    public ResponseEntity<?> getCart(@RequestHeader HttpHeaders headers, CartRequest request) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        return cartService.getCart(userId);
+        return cartService.getCart(authenticationFacade.getUserId());
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> addCartItemById(@RequestHeader HttpHeaders headers, @PathVariable String id) {
-
-        CartRequest request = new CartRequest();
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-
-        request.setUserId(userId);
-        request.setMovieId(id);
-        request.setQty(1);
-
-        return cartService.addCart(request);
-    }
-
-
-    @PutMapping("/")
-    public ResponseEntity<?> addUserCartItem(@RequestHeader HttpHeaders headers,
-                                       @RequestBody CartRequest request) {
-
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setUserId(userId);
-
-        return cartService.addCart(request);
-    }
 
     @PostMapping("/")
-    public ResponseEntity<?> updateUserCartItem(@RequestHeader HttpHeaders headers,
+    public ResponseEntity<?> addCart(@RequestHeader HttpHeaders headers, @RequestBody CartRequest request) {
+
+
+        return cartService.addCart(request);
+    }
+
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateCart(@RequestHeader HttpHeaders headers,
                                              @RequestBody CartRequest request) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setUserId(userId);
 
         return cartService.updateCart(request);
     }
 
 
-
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteItemFromUsersCart(@RequestHeader HttpHeaders headers,
+    public ResponseEntity<?> deleteCart(@RequestHeader HttpHeaders headers,
                                                      @PathVariable Integer id) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
         CartRequest request = new CartRequest();
-        request.setUserId(userId);
         request.setId(id);
 
-        System.out.println("deleteItemFromUsersCart: " + id);
         return cartService.deleteCart(request);
     }
 
@@ -95,11 +70,8 @@ public class CartController {
     public ResponseEntity<?>  getCartQty(
             @RequestHeader HttpHeaders headers) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
         CartRequest request = new CartRequest();
-        request.setUserId(userId);
-
+        request.setUserId(String.valueOf(authenticationFacade.getUserId()));
         return cartService.getCartQty(request);
     }
 
@@ -127,15 +99,14 @@ public class CartController {
     }
 
     @GetMapping("/{id}")
-    //public Map<String, Object> findbyUserId(
-    public ResponseEntity<?> findCartItemsbyUserId(
-            @PathVariable String id) {
+    public ResponseEntity<?> findCartById(
+            @PathVariable Integer id) {
 
         return cartService.getCart(id);
     }
 
     @GetMapping("/movie/{id}")
-    public ResponseEntity<?> findCartItemsbyMovieId(
+    public ResponseEntity<?> findCartByMovieId(
             @PathVariable String id,
             @RequestParam Optional<Integer> limit,
             @RequestParam Optional<Integer> page,
@@ -153,7 +124,7 @@ public class CartController {
 
     @GetMapping("/customer/{id}")
     //public Map<String, Object> findbyUserId(
-    public ResponseEntity<?> findCartItemsByCustomer(
+    public ResponseEntity<?> findCartByCustomer(
             @PathVariable Integer id,
             @RequestParam Optional<Integer> limit,
             @RequestParam Optional<Integer> page,
@@ -167,23 +138,5 @@ public class CartController {
                         Sort.Direction.ASC, sortBy.orElse("id")
                 )
         );
-    }
-
-    @PutMapping("/add")
-    public ResponseEntity<?> addToCart(@RequestBody CartRequest request) {
-
-        return cartService.addCart(request);
-    }
-
-    @PostMapping("/update")
-    public ResponseEntity<?> updateToCart(@RequestBody CartRequest request) {
-
-        return cartService.updateCart(request);
-    }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteFromCart(@RequestBody CartRequest request) {
-
-        return cartService.deleteCart(request);
     }
 }

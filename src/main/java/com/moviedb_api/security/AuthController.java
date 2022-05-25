@@ -1,6 +1,7 @@
 package com.moviedb_api.security;
 
 import com.moviedb_api.API;
+import com.moviedb_api.HttpResponse;
 import com.moviedb_api.cart.Cart;
 import com.moviedb_api.customer.Customer;
 import com.moviedb_api.customer.CustomerRepository;
@@ -55,6 +56,8 @@ public class AuthController {
     @Autowired
     private RoleService roleService;
 
+
+
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken(@RequestHeader HttpHeaders headers) {
 
@@ -77,7 +80,6 @@ public class AuthController {
 
     @RequestMapping(value = "/reg", method = RequestMethod.POST)
     public ResponseEntity<?> registerUser(@RequestBody String authenticationRequest) throws Exception {
-        HashMap<String, Object> response = new HashMap<>();
         JSONObject request = new JSONObject(authenticationRequest);
         String password = request.getString("password");
         String email = request.getString("email");
@@ -86,9 +88,11 @@ public class AuthController {
 
         Optional<Customer> present = customerRepository.findByEmail(email);
         if(present.isPresent()) {
-            response.put("message", "User already exists.");
-            return ResponseEntity.badRequest()
-                    .body(response);
+            HttpResponse response = new HttpResponse();
+            response.setMessage("User already exists.");
+            response.setStatus(400);
+            response.setSuccess(false);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
         Customer customer = new Customer();
@@ -102,28 +106,49 @@ public class AuthController {
         roleService.insertWithQuery(save.getId(), Roles.USER);
 
         if(save == null) {
-            response.put("message", "User could not be created.");
-            return ResponseEntity.badRequest()
-                    .body(response);
+            HttpResponse response = new HttpResponse();
+            response.setMessage("User could not be created.");
+            response.setStatus(400);
+            response.setSuccess(false);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        //Authentication authenticate = authenticate(customer.getEmail(), customer.getPassword());
 
         final Customer userDetails = userDetailsService
                 .loadUserByUsername(customer.getEmail());
 
         final String token = jwtTokenUtil.generateAccessToken(userDetails);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(customer.getId());
 
-        response.put("id",customer.getId());
-        response.put("username",customer.getEmail());
-        response.put("token",token);
-        response.put("roles", userDetails.getAuthorities());
 
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(customer.getId());
+        userResponse.setUsername(customer.getEmail());
+        userResponse.setAccessToken(token);
+        userResponse.setRoles(userDetails.getAuthorities());
+        userResponse.setRefreshToken(refreshToken.getToken());
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.AUTHORIZATION, token)
-                .body(response);
+                .body(userResponse);
     }
+
+    @RequestMapping(value = "/logout", method = RequestMethod.GET)
+    public ResponseEntity<?> logout(@RequestHeader HttpHeaders headers) {
+
+        String token = headers.get("authorization").get(0).split(" ")[1].trim();
+
+        Integer userId = Integer.valueOf(jwtTokenUtil.getUserId(token));
+        refreshTokenService.deleteByUserId(userId);
+
+        HttpResponse response = new HttpResponse();
+        response.setMessage("User logged out successfully.");
+        response.setStatus(200);
+        response.setSuccess(true);
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
     @RequestMapping(value = "/auth", method = RequestMethod.POST)
     public ResponseEntity<?> createAuthenticationToken(@RequestBody String authenticationRequest) throws Exception {
@@ -140,10 +165,7 @@ public class AuthController {
         final String token = jwtTokenUtil.generateAccessToken(userDetails);
 
         Customer customer = (Customer) authenticate.getPrincipal();
-
-
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(customer.getId());
-
 
         UserResponse userResponse = new UserResponse();
         userResponse.setId(customer.getId());
@@ -151,12 +173,6 @@ public class AuthController {
         userResponse.setAccessToken(token);
         userResponse.setRoles(userDetails.getAuthorities());
         userResponse.setRefreshToken(refreshToken.getToken());
-
-        HashMap<String, Object> response = new HashMap<>();
-        response.put("id",customer.getId());
-        response.put("username",customer.getEmail());
-        response.put("token",token);
-        response.put("roles", authenticate.getAuthorities());
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.AUTHORIZATION, token)
@@ -166,15 +182,14 @@ public class AuthController {
     @RequestMapping(value = "/refresh", method = RequestMethod.POST)
     public ResponseEntity<?> refreshToken(@RequestBody TokenRefreshRequest request) throws Exception {
 
-        //String requestToken = headers.get("authorization").get(0).split(" ")[1].trim();
-        //TokenRefreshRequest request = new TokenRefreshRequest();
-        //request.setRefreshToken(requestToken);
         System.out.println("Generating new token");
 
         Optional<RefreshToken> refreshTokenOptional = refreshTokenService.findByToken(request.getRefreshToken());
 
         if(!refreshTokenOptional.isPresent()) {
-            return ResponseEntity.badRequest().body("Invalid refresh token");
+
+            //Return unauthorized if token is invalid
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
         RefreshToken refreshToken = refreshTokenOptional.get();

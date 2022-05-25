@@ -158,8 +158,8 @@ public class MovieController {
     Optional<Movie> findMovieById(
             @PathVariable(value = "id") String id)
     {
-        new API().ProcessMovie(id, movieRepository, ratingRepository);
-        //API.background(id);
+        //new API().ProcessMovie(id, movieRepository, ratingRepository);
+        //new API.background(id);
         return movieRepository.findById(id);
     }
 

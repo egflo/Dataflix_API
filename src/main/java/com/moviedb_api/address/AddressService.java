@@ -6,8 +6,10 @@ import com.moviedb_api.bookmark.BookmarkRepository;
 import com.moviedb_api.bookmark.BookmarkRequest;
 import com.moviedb_api.customer.Customer;
 import com.moviedb_api.customer.CustomerRepository;
+import com.moviedb_api.security.AuthenticationFacade;
 import com.moviedb_api.user_address.User_Address;
 import com.moviedb_api.user_address.User_AddressRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,10 @@ public class AddressService {
     private final CustomerRepository customerRepository;
     private final User_AddressRepository user_addressRepository;
 
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
     public AddressService(AddressRepository addressRepository
             ,User_AddressRepository user_addressRepository
             ,CustomerRepository customerRepository) {
@@ -44,12 +50,34 @@ public class AddressService {
     }
 
     public ResponseEntity<?> getAddress(Integer id) {
-        Optional<Address> address = addressRepository.findById(id);
-        if (address.isPresent()) {
-            return ResponseEntity.ok(address.get());
+        HttpResponse httpResponse = new HttpResponse();
+
+        if(authenticationFacade.hasRole("ADMIN")){
+            Optional<Address> address = addressRepository.findById(id);
+            if (address.isPresent()) {
+                httpResponse.setStatus(HttpStatus.OK.value());
+                httpResponse.setMessage("Address found");
+                httpResponse.setData(address.get());
+                return ResponseEntity.ok(httpResponse);
+            }
+
+            httpResponse.setStatus(HttpStatus.NOT_FOUND.value());
+            httpResponse.setMessage("Address not found");
+            return new ResponseEntity<>(httpResponse, HttpStatus.NOT_FOUND);
         }
 
-        HttpResponse httpResponse = new HttpResponse();
+
+        //If user is not admin, check if user is the owner of the address
+        Optional<User_Address> user_address = user_addressRepository.findByUserIdAndAddressId(authenticationFacade.getUserId(), id);
+
+        if (user_address.isPresent()) {
+            Address address = addressRepository.findById(id).get();
+            httpResponse.setStatus(HttpStatus.OK.value());
+            httpResponse.setMessage("Address found");
+            httpResponse.setData(address);
+            return ResponseEntity.ok(httpResponse);
+        }
+
         httpResponse.setMessage("Address not found");
         httpResponse.setStatus(HttpStatus.NOT_FOUND.value());
         httpResponse.setSuccess(false);
@@ -59,8 +87,6 @@ public class AddressService {
 
 
     public ResponseEntity<?> createAddress(AddressRequest addressRequest) {
-
-        List<User_Address> addresses = user_addressRepository.findByUserId(addressRequest.getUserId());
 
         Address address = new Address();
         address.setFirstname(addressRequest.getFirstname());
@@ -74,14 +100,15 @@ public class AddressService {
         Address newAddress = addressRepository.save(address);
 
         User_Address user_address = new User_Address();
-        user_address.setUserId(addressRequest.getUserId());
+        //If user is not admin, set user id to the current user
+        user_address.setUserId(authenticationFacade.hasRole("ADMIN") ? addressRequest.getUserId() : authenticationFacade.getUserId());
         user_address.setAddressId(newAddress.getId());
 
-       if (addresses.size() == 0) {
-            Customer customer = customerRepository.findById(addressRequest.getUserId()).get();
-            customer.setPrimaryAddress(newAddress.getId());
-            customerRepository.save(customer);
-       }
+       //if (addresses.size() == 0) {
+       //     Customer customer = customerRepository.findById(addressRequest.getUserId()).get();
+      //      customer.setPrimaryAddress(newAddress.getId());
+       //     customerRepository.save(customer);
+      // }
 
         user_addressRepository.save(user_address);
 
@@ -95,10 +122,19 @@ public class AddressService {
     }
 
     public ResponseEntity<?> updateAddress(AddressRequest addressRequest) {
-        Optional<Address> address = addressRepository.findById(addressRequest.getId());
 
-        System.out.println("addressRequest.getId()"+addressRequest.getId());
-        System.out.println(addressRequest.getUnit());
+        //If user is not admin, check if user is the owner of the address
+        Optional<User_Address> user_address = user_addressRepository.findByUserIdAndAddressId(authenticationFacade.getUserId(), addressRequest.getId());
+
+        if(authenticationFacade.hasRole("USER") && !user_address.isPresent()){
+            HttpResponse httpResponse = new HttpResponse();
+            httpResponse.setMessage("Address not found");
+            httpResponse.setStatus(HttpStatus.NOT_FOUND.value());
+            httpResponse.setSuccess(false);
+            return new ResponseEntity<>(httpResponse, HttpStatus.NOT_FOUND);
+        }
+
+        Optional<Address> address = addressRepository.findById(addressRequest.getId());
 
         if (address.isPresent()) {
             Address newAddress = address.get();
@@ -129,17 +165,36 @@ public class AddressService {
 
 
     public ResponseEntity<?> deleteAddress(Integer id) {
+
+        //If user is not admin, check if user is the owner of the address
+        Optional<User_Address> user_address = user_addressRepository.findByUserIdAndAddressId(authenticationFacade.getUserId(), id);
+        List<User_Address> user_addresses = user_addressRepository.findByUserId(id);
+
+        if(authenticationFacade.hasRole("USER") && !user_address.isPresent()){
+            HttpResponse httpResponse = new HttpResponse();
+            httpResponse.setMessage("Address not found");
+            httpResponse.setStatus(HttpStatus.NOT_FOUND.value());
+            httpResponse.setSuccess(false);
+            return new ResponseEntity<>(httpResponse, HttpStatus.NOT_FOUND);
+        }
+
         Optional<Address> address = addressRepository.findById(id);
         if (address.isPresent()) {
 
             user_addressRepository.deleteByAddressId(id);
-
             HttpResponse httpResponse = new HttpResponse();
             httpResponse.setMessage("Address deleted");
             httpResponse.setStatus(HttpStatus.OK.value());
             httpResponse.setSuccess(true);
 
             addressRepository.deleteById(id);
+
+            //Update customer primary address if it is deleted
+            if(user_addresses.size() == 1){
+                Customer customer = customerRepository.findById(authenticationFacade.getUserId()).get();
+                customer.setPrimaryAddress(user_addresses.get(0).getAddressId());
+                customerRepository.save(customer);
+            }
 
             return ResponseEntity.ok(httpResponse);
         }
@@ -195,10 +250,12 @@ public class AddressService {
                 addressRepository.findByPostcode(postcode, pageRequest));
     }
 
-    public ResponseEntity<?> makeAddressPrimary(Integer id, Integer userId) {
+    public ResponseEntity<?> makeAddressPrimary(Integer id) {
+
+
         Optional<Address> address = addressRepository.findById(id);
         if (address.isPresent()) {
-            Customer customer = customerRepository.findById(userId).get();
+            Customer customer = customerRepository.findById(authenticationFacade.getUserId()).get();
 
             System.out.println(customer.getPrimaryAddress());
             System.out.println(customer.getId());

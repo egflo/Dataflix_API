@@ -2,6 +2,7 @@ package com.moviedb_api.sale;
 
 import com.google.gson.Gson;
 import com.moviedb_api.order.OrderRepository;
+import com.moviedb_api.security.AuthenticationFacade;
 import com.moviedb_api.security.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,24 +32,24 @@ public class SaleController {
     @Autowired
     private SaleService saleService;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     /**
      * USER METHODS
      */
     @GetMapping("/")
     public
-    ResponseEntity<?> getSalesByUser(
+    ResponseEntity<?> getSalesByUserUsingHeaders(
             @RequestHeader HttpHeaders headers,
             @RequestParam Optional<Integer> limit,
             @RequestParam Optional<Integer> page,
             @RequestParam Optional<String> sortBy
     )     {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
 
         return saleService.getSalesByCustomerId(
-                Integer.parseInt(userId),
+                authenticationFacade.getUserId(),
                 PageRequest.of(
                         page.orElse(0),
                         limit.orElse(5),
@@ -63,10 +64,7 @@ public class SaleController {
             @RequestHeader HttpHeaders headers,
             @RequestBody SaleRequest request){
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-
-        request.setCustomerId(Integer.parseInt(userId));
+        request.setCustomerId(authenticationFacade.getUserId());
         return saleService.addSale(request);
     }
 
@@ -76,9 +74,16 @@ public class SaleController {
             @RequestHeader HttpHeaders headers,
             @RequestBody SaleRequest request) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setCustomerId(Integer.parseInt(userId));
+        return saleService.updateSale(request);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateSaleUserById(
+            @RequestHeader HttpHeaders headers,
+            @PathVariable(value = "id") Integer id,
+            @RequestBody SaleRequest request) {
+
+        request.setId(id);
 
         return saleService.updateSale(request);
     }
@@ -141,26 +146,6 @@ public class SaleController {
     {
         return saleService.searchSale(id);
     }
-
-    @PostMapping("/{id}")
-    public @ResponseBody
-    ResponseEntity<?> updateSale(@RequestBody SaleRequest request)
-    {
-        Optional<Sale> update = saleRepository.findById(request.getId());
-        if(update.isPresent()) {
-            Sale sale = update.get();
-            sale.setStripeId(request.getStripeId());
-            Sale save = saleRepository.save(sale);
-            return new ResponseEntity<>(
-                    save,
-                    HttpStatus.OK); //Resource Created
-        }
-        return new ResponseEntity<>(
-                "Sale Not Found",
-                HttpStatus.NOT_FOUND);
-    }
-
-
 
     @GetMapping(path="/all")
     public @ResponseBody

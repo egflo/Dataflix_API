@@ -11,6 +11,7 @@ import com.moviedb_api.checkout.ChargeController;
 import com.moviedb_api.checkout.StripeService;
 import com.moviedb_api.order.Order;
 import com.moviedb_api.order.OrderRepository;
+import com.moviedb_api.security.AuthenticationFacade;
 import com.moviedb_api.shipping.Shipping;
 import com.moviedb_api.shipping.ShippingRepository;
 import com.moviedb_api.shipping.ShippingRequest;
@@ -46,6 +47,8 @@ public class SaleService {
 
     private final OrderRepository orderRepository;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     @Autowired
     private StripeService paymentsService;
@@ -112,6 +115,12 @@ public class SaleService {
     }
 
     public ResponseEntity<?> addSale(SaleRequest request) {
+
+        if(authenticationFacade.hasRole("ADMIN")){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to perform this action");
+        }
+
+        System.out.println("Sale request: " + request);
         Sale sale = new Sale();
         sale.setCustomerId(request.getCustomerId());
         sale.setSalesTax(request.getSalesTax());
@@ -238,13 +247,6 @@ public class SaleService {
             Date date = c.getTime();
             java.sql.Date sqlDate = new java.sql.Date(date.getTime());
             long sales = saleRepository.findAllSalesFromDate(sqlDate);
-
-            //String month = new SimpleDateFormat("MMM").format(sqlDate);
-            //String day = new SimpleDateFormat("dd").format(sqlDate);
-            //dv.date = month + " " + day;
-            //dv.count = (int) sales;
-            //last_year.dates.add(month + " " + day);
-            //last_year.sales.add((int)sales);
             last_year.add((int)sales);
         }
 

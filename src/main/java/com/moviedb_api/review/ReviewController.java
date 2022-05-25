@@ -37,7 +37,7 @@ public class ReviewController {
         return reviewService.findById(id);
     }
 
-    @PutMapping(path="/")
+    @PostMapping(path="/")
     public @ResponseBody
     ResponseEntity<?> addReview(@RequestBody ReviewRequest reviewRequest)
     {
@@ -46,9 +46,10 @@ public class ReviewController {
     }
 
 
-    @PostMapping(path="/")
+    @PutMapping(path="/{id}")
     public @ResponseBody
-    ResponseEntity<?> updateReview(@RequestBody ReviewRequest reviewRequest)
+    ResponseEntity<?> updateReview(@PathVariable("id") Integer id,
+            @RequestBody ReviewRequest reviewRequest)
     {
         return reviewService.update(reviewRequest);
     }
@@ -104,7 +105,6 @@ public class ReviewController {
                 )
         );
     }
-
 
 
     @GetMapping(path="/movie/{movieId}")

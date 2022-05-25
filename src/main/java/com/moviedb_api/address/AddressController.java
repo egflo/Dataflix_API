@@ -1,9 +1,7 @@
 package com.moviedb_api.address;
 
-
-import com.moviedb_api.customer.*;
+import com.moviedb_api.security.AuthenticationFacade;
 import com.moviedb_api.security.JwtTokenUtil;
-import com.moviedb_api.user_address.User_AddressRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -11,7 +9,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.*;
 
 @Controller // This means that this class is a Controller
@@ -24,15 +21,15 @@ public class AddressController {
     @Autowired
     private JwtTokenUtil authenticationService;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
     @GetMapping("/")
     @ResponseBody
     public ResponseEntity<?> getAddresses(
             @RequestHeader HttpHeaders headers) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-
-        return addressService.getAddressesByUserId(Integer.parseInt(userId));
+        return addressService.getAddressesByUserId(authenticationFacade.getUserId());
     }
 
     @GetMapping("/{id}")
@@ -42,37 +39,30 @@ public class AddressController {
         return addressService.getAddress(id);
     }
 
-    @PutMapping("/")
+    @PostMapping("/")
     @ResponseBody
     public ResponseEntity<?> addAddress(
             @RequestHeader HttpHeaders headers,
             @RequestBody AddressRequest request) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setUserId(Integer.parseInt(userId));
-
         return addressService.createAddress(request);
     }
 
-    @PostMapping("/{id}")
+    @PutMapping("/{id}")
     public @ResponseBody ResponseEntity<?>  updateAddressById(
             @PathVariable(value = "id") Integer id,
             @RequestBody AddressRequest request)
     {
+
         request.setId(id);
         return addressService.updateAddress(request);
     }
 
-    @PostMapping("/")
+    @PutMapping("/")
     @ResponseBody
     public ResponseEntity<?> updateAddress(
             @RequestHeader HttpHeaders headers,
             @RequestBody AddressRequest request) {
-
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-        request.setUserId(Integer.parseInt(userId));
 
         return addressService.updateAddress(request);
     }
@@ -83,8 +73,7 @@ public class AddressController {
             @RequestHeader HttpHeaders headers,
             @PathVariable(value = "id") Integer id) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
+
         return addressService.deleteAddress(id);
     }
 
@@ -94,10 +83,7 @@ public class AddressController {
             @RequestHeader HttpHeaders headers,
             @PathVariable(value = "id") Integer id) {
 
-        String token = headers.get("authorization").get(0).split(" ")[1].trim();
-        String userId = authenticationService.getUserId(token);
-
-        return addressService.makeAddressPrimary(id, Integer.parseInt(userId));
+        return addressService.makeAddressPrimary(id);
     }
 
 

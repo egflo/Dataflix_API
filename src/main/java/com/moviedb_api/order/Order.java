@@ -58,19 +58,6 @@ public class Order {
         this.movieId = movieId;
     }
 
-    /**
-    public String getTitle() {return movie.getTitle();}
-
-    public String getPoster() {return movie.getPoster();}
-
-    public int getYear() {return movie.getYear();}
-
-    public String gerRunTime() {return movie.getRuntime();}
-
-    public String getRated() {return movie.getRated();}
-
-     **/
-
     public int getQuantity() {
         return quantity;
     }

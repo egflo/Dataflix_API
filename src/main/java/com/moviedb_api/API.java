@@ -36,15 +36,13 @@ class Customer
 };
 
 public class API {
-    @Value("${moviedb.api.key}")
+    @Value("${moviedb_api.key}")
     String API_KEY;
 
     @Value("${background_api.key}")
     String API_KEY_BACKGROUND;
 
     public int background(String movie_id)  {
-
-
         int row_ratings, row_movie = 0;
 
         try {
@@ -143,9 +141,6 @@ public class API {
         return row_movie;
     }
 
-
-
-
     public int ProcessMovie(String movie_id, MovieRepository movieRepository, RatingRepository ratingRepository) {
         try {
             System.out.println("Processing Movie ID " + movie_id);
@@ -153,11 +148,10 @@ public class API {
             if(present.isPresent()) {
                 Movie movie = present.get();
                 Integer cached = movie.getCached();
-                if(cached == 1 || cached == 0) {
+                if(true) {
                     //Already cached
                     return 0;
                 }
-
 
                 // Create a neat value object to hold the URL
                 URL url = new URL("http://www.omdbapi.com/?i="+movie_id+"&apikey="+API_KEY);
