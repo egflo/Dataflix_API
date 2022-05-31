@@ -155,7 +155,13 @@ public class CartService {
                 cart.setCreatedDate(cart_duplicate.get().getCreatedDate());
             }
 
-            return ResponseEntity.ok(cartRepository.save(cart));
+            HttpResponse response = new HttpResponse();
+            response.setStatus(HttpStatus.OK.value());
+            response.setMessage("Product added to cart");
+            response.setSuccess(true);
+            response.setData(cartRepository.save(cart));
+
+            return ResponseEntity.ok(response);
         }
 
         HttpResponse response = new HttpResponse();

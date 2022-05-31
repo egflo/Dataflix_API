@@ -47,8 +47,16 @@ public class CartController {
     }
 
 
-    @PutMapping("/{id}")
+    @PutMapping("/")
     public ResponseEntity<?> updateCart(@RequestHeader HttpHeaders headers,
+                                        @RequestBody CartRequest request) {
+
+
+        return cartService.updateCart(request);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateCartById(@RequestHeader HttpHeaders headers,
                                              @RequestBody CartRequest request) {
 
 

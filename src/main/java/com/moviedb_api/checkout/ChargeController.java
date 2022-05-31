@@ -128,7 +128,6 @@ public class ChargeController {
         Customer customer = customerRepository.findById(userId).get();
         List<Address> addresses = customer.getAddresses();
         Iterable<Cart> cart = cartRepository.findAllByUserIdOrderByCreatedDateDesc(String.valueOf(userId));
-
         Optional<Address> address = addressRepository.findById(request.getId());
 
         if(address.isPresent()) {
@@ -161,6 +160,7 @@ public class ChargeController {
                     response,
                     HttpStatus.BAD_REQUEST);
         }
+
 
         return new ResponseEntity<>(
                 response,

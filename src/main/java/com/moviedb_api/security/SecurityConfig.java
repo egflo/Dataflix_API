@@ -46,6 +46,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         this.jwtTokenFilter = jwtTokenFilter;
     }
 
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers("/**");
+    }
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
@@ -75,6 +80,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         // Set permissions on endpoints
         http.authorizeRequests()
+
 
                 //Address endpoints
                 .antMatchers(HttpMethod.GET, "/address/**").hasAnyAuthority("USER","ADMIN")
@@ -262,11 +268,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         auth.userDetailsService(userDetailsService).passwordEncoder(bCryptPasswordEncoder());
     }
 
-
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring();
-    }
 
     // Used by spring security if CORS is enabled.
     @Bean

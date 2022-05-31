@@ -46,6 +46,7 @@ public class API {
         int row_ratings, row_movie = 0;
 
         try {
+
             Class.forName("com.mysql.cj.jdbc.Driver");
             String USER = "root";
             String PASSWORD = "12251225";
@@ -139,6 +140,7 @@ public class API {
         }
 
         return row_movie;
+
     }
 
     public int ProcessMovie(String movie_id, MovieRepository movieRepository, RatingRepository ratingRepository) {

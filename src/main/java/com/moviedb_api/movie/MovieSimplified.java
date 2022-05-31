@@ -170,9 +170,17 @@ public class MovieSimplified {
 
     public Object getRatings() {
         Map<String, Object> map = new HashMap<>();
-        map.put("imdb", ratings.getImdb() == null ? "" : ratings.getImdb());
-        map.put("rotten", ratings.getRottenTomatoes() == null ? "" : ratings.getRottenTomatoes());
-        map.put("metacritic", ratings.getMetacritic() == null ? "" : ratings.getMetacritic());
+
+        if (ratings != null) {
+            map.put("imdb", ratings.getImdb() == null ? "" : ratings.getImdb());
+            map.put("rotten", ratings.getRottenTomatoes() == null ? "" : ratings.getRottenTomatoes());
+            map.put("metacritic", ratings.getMetacritic() == null ? "" : ratings.getMetacritic());
+        }
+        else {
+            map.put("imdb",  "" );
+            map.put("rotten",  "" );
+            map.put("metacritic",  "" );
+        }
 
         return map;
     }
